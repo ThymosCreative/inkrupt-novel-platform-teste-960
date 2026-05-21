@@ -15,6 +15,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ChapterComments } from '@/components/ChapterComments'
 
 export default function Reader() {
   const { id, num } = useParams()

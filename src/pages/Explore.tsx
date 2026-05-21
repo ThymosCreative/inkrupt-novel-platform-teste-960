@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { getNovels } from '@/services/api'
 import { NovelCard } from '@/components/NovelCard'
 import { cn } from '@/lib/utils'
+import { Search } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -18,6 +20,7 @@ const FILTERS = {
 }
 
 export default function Explore() {
+  const [searchQuery, setSearchQuery] = useState('')
   const [activeFilters, setActiveFilters] = useState({
     category: 'Todos',
     status: 'Todos',
@@ -29,6 +32,9 @@ export default function Explore() {
 
   useEffect(() => {
     let filterParts = []
+    if (searchQuery.trim()) {
+      filterParts.push(`(title ~ "${searchQuery.trim()}" || description ~ "${searchQuery.trim()}")`)
+    }
     if (activeFilters.category !== 'Todos') filterParts.push(`genres ~ "${activeFilters.category}"`)
     if (activeFilters.status !== 'Todos') filterParts.push(`status = "${activeFilters.status}"`)
     if (activeFilters.type !== 'Todos') filterParts.push(`type = "${activeFilters.type}"`)
@@ -38,10 +44,14 @@ export default function Explore() {
     else if (activeFilters.sort === 'Mais recentes') sortStr = '-created'
     else if (activeFilters.sort === 'Mais avaliados') sortStr = '-rating'
 
-    getNovels({ filter: filterParts.join(' && '), sort: sortStr }).then((res) =>
-      setNovels(res.items),
-    )
-  }, [activeFilters])
+    const timer = setTimeout(() => {
+      getNovels({ filter: filterParts.join(' && '), sort: sortStr }).then((res) =>
+        setNovels(res.items),
+      )
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [activeFilters, searchQuery])
 
   const updateFilter = (group: keyof typeof FILTERS, value: string) => {
     setActiveFilters((prev) => ({ ...prev, [group]: value }))
@@ -88,6 +98,16 @@ export default function Explore() {
       </h1>
 
       <div className="bg-zinc-950/50 border border-zinc-900 p-6 rounded-2xl space-y-6 mb-12">
+        <div className="relative max-w-md mb-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar por título ou descrição..."
+            className="pl-10 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-600 focus-visible:ring-lime-400"
+          />
+        </div>
+
         <PillGroup title="Categoria" group="category" options={FILTERS.category} />
         <PillGroup title="Status" group="status" options={FILTERS.status} />
         <PillGroup title="Tipo" group="type" options={FILTERS.type} />
@@ -128,7 +148,7 @@ export default function Explore() {
         ))}
         {novels.length === 0 && (
           <div className="col-span-full text-center text-zinc-500 py-12">
-            Nenhuma obra encontrada.
+            Nenhum resultado encontrado.
           </div>
         )}
       </div>

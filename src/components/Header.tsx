@@ -1,22 +1,62 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Search, Bell } from 'lucide-react'
+import { Search, Bell, X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AuthModal } from './AuthModal'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
+import { searchNovels, getCoverUrl } from '@/services/api'
 
 export function Header() {
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const { user, isAuthenticated } = useAuth()
   const location = useLocation()
 
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
+
   const navLinks = [
     { name: 'Início', path: '/' },
     { name: 'Explorar', path: '/explore' },
     { name: 'Escrever', path: '/write' },
   ]
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([])
+      setIsSearching(false)
+      return
+    }
+
+    setIsSearching(true)
+    const timer = setTimeout(() => {
+      searchNovels(searchQuery.trim())
+        .then((res) => {
+          setSearchResults(res.items)
+        })
+        .catch(() => {
+          setSearchResults([])
+        })
+        .finally(() => {
+          setIsSearching(false)
+        })
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setSearchQuery('')
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   return (
     <>
@@ -46,12 +86,74 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-4">
+            <div className="relative hidden sm:block" ref={searchRef}>
+              <div className="flex items-center bg-zinc-900 rounded-full px-3 py-1.5 border border-zinc-800 focus-within:border-lime-400 focus-within:ring-1 focus-within:ring-lime-400 transition-all">
+                <Search className="w-4 h-4 text-zinc-400" />
+                <input
+                  type="text"
+                  placeholder="Pesquisar obras..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-transparent border-none text-sm text-white focus:outline-none focus:ring-0 ml-2 w-48 lg:w-64 placeholder:text-zinc-600"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="text-zinc-400 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {searchQuery && (
+                <div className="absolute top-full right-0 mt-2 w-[300px] lg:w-full bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[400px]">
+                  {isSearching ? (
+                    <div className="flex items-center justify-center p-6 text-zinc-500">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    </div>
+                  ) : searchResults.length > 0 ? (
+                    <div className="overflow-y-auto">
+                      {searchResults.map((novel) => (
+                        <Link
+                          key={novel.id}
+                          to={`/novel/${novel.id}`}
+                          onClick={() => setSearchQuery('')}
+                          className="flex items-center gap-3 p-3 hover:bg-zinc-800 transition-colors border-b border-zinc-800/50 last:border-0"
+                        >
+                          <img
+                            src={getCoverUrl(novel)}
+                            alt={novel.title}
+                            className="w-10 h-14 object-cover rounded bg-zinc-800"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-bold text-white truncate group-hover:text-lime-400">
+                              {novel.title}
+                            </h4>
+                            <p className="text-xs text-zinc-400 truncate mt-0.5">
+                              {novel.expand?.author?.name || 'Autor'}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-6 text-center text-sm text-zinc-500">
+                      Nenhum resultado encontrado
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <Button
               variant="ghost"
               size="icon"
-              className="text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-full"
+              className="sm:hidden text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-full"
             >
-              <Search className="w-5 h-5" />
+              <Link to="/explore">
+                <Search className="w-5 h-5" />
+              </Link>
             </Button>
 
             {isAuthenticated ? (

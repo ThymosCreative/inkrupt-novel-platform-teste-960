@@ -16,6 +16,28 @@ export const getNovels = async (options: any = {}) => {
   return pb.collection('novels').getList(1, 50, { expand: 'author', ...options })
 }
 
+export const getHotNovels = async () => {
+  return pb.collection('novels').getList(1, 5, {
+    filter: 'is_hot = true',
+    expand: 'author',
+    sort: '-reads',
+  })
+}
+
+export const getTrendingNovels = async () => {
+  return pb.collection('novels').getList(1, 12, {
+    expand: 'author',
+    sort: '-reads',
+  })
+}
+
+export const searchNovels = async (query: string) => {
+  return pb.collection('novels').getList(1, 5, {
+    filter: `title ~ "${query}" || description ~ "${query}"`,
+    expand: 'author',
+  })
+}
+
 export const getNovel = async (id: string) => {
   return pb.collection('novels').getOne(id, { expand: 'author' })
 }

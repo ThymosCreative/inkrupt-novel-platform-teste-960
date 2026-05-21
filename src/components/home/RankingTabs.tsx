@@ -1,13 +1,25 @@
+import { useEffect, useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { Star } from 'lucide-react'
-import { getCoverUrl } from '@/services/api'
+import { getNovels, getCoverUrl } from '@/services/api'
 
-export function RankingTabs({ novels }: { novels: any[] }) {
-  const renderList = (sorted: any[]) => (
+export function RankingTabs() {
+  const [activeTab, setActiveTab] = useState('rating')
+  const [novels, setNovels] = useState<any[]>([])
+
+  useEffect(() => {
+    let sortStr = '-rating'
+    if (activeTab === 'reads') sortStr = '-reads'
+    else if (activeTab === 'recent') sortStr = '-created'
+
+    getNovels({ sort: sortStr, requestKey: null }).then((res) => setNovels(res.items))
+  }, [activeTab])
+
+  const renderList = (list: any[]) => (
     <div className="space-y-4">
-      {sorted.slice(0, 10).map((novel, i) => (
+      {list.slice(0, 10).map((novel, i) => (
         <Link
           key={novel.id}
           to={`/novel/${novel.id}`}
@@ -52,7 +64,7 @@ export function RankingTabs({ novels }: { novels: any[] }) {
   )
 
   return (
-    <Tabs defaultValue="rating" className="w-full">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="w-full bg-zinc-900 p-1 rounded-xl mb-6">
         <TabsTrigger
           value="rating"
@@ -73,16 +85,14 @@ export function RankingTabs({ novels }: { novels: any[] }) {
           Novos
         </TabsTrigger>
       </TabsList>
-      <TabsContent value="rating">
-        {renderList([...novels].sort((a, b) => (b.rating || 0) - (a.rating || 0)))}
+      <TabsContent value="rating" className="mt-0">
+        {renderList(novels)}
       </TabsContent>
-      <TabsContent value="reads">
-        {renderList([...novels].sort((a, b) => (b.reads || 0) - (a.reads || 0)))}
+      <TabsContent value="reads" className="mt-0">
+        {renderList(novels)}
       </TabsContent>
-      <TabsContent value="recent">
-        {renderList(
-          [...novels].sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime()),
-        )}
+      <TabsContent value="recent" className="mt-0">
+        {renderList(novels)}
       </TabsContent>
     </Tabs>
   )

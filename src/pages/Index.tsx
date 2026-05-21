@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getNovels } from '@/services/api'
+import { getNovels, getHotNovels, getTrendingNovels } from '@/services/api'
 import { HeroCarousel } from '@/components/home/HeroCarousel'
 import { SectionHeader } from '@/components/SectionHeader'
 import { NovelCard } from '@/components/NovelCard'
@@ -10,20 +10,21 @@ import { ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export default function Index() {
-  const [novels, setNovels] = useState<any[]>([])
+  const [recentNovels, setRecentNovels] = useState<any[]>([])
+  const [hotNovels, setHotNovels] = useState<any[]>([])
+  const [trendingNovels, setTrendingNovels] = useState<any[]>([])
 
   useEffect(() => {
-    getNovels({ sort: '-created' }).then((res) => setNovels(res.items))
+    getNovels({ sort: '-updated' }).then((res) => setRecentNovels(res.items))
+    getHotNovels().then((res) => setHotNovels(res.items))
+    getTrendingNovels().then((res) => setTrendingNovels(res.items))
   }, [])
 
-  const trending = [...novels].sort((a, b) => (b.reads || 0) - (a.reads || 0)).slice(0, 8)
-  const recent = [...novels].slice(0, 8)
-  const originals = novels.filter((n) => n.type === 'Original').slice(0, 4)
-  const hot = novels.filter((n) => n.is_hot)
+  const originals = recentNovels.filter((n) => n.type === 'Original').slice(0, 4)
 
   return (
     <div className="pb-16">
-      {hot.length > 0 && <HeroCarousel novels={hot} />}
+      {hotNovels.length > 0 && <HeroCarousel novels={hotNovels} />}
 
       <div className="container mx-auto px-4 mt-12 space-y-16">
         <section>
@@ -39,7 +40,7 @@ export default function Index() {
           />
           <ScrollArea className="w-full whitespace-nowrap pb-4">
             <div className="flex w-max space-x-4 p-1">
-              {trending.map((novel) => (
+              {trendingNovels.map((novel) => (
                 <NovelCard key={novel.id} novel={novel} className="w-[140px] md:w-[160px]" />
               ))}
             </div>
@@ -52,7 +53,7 @@ export default function Index() {
             <section>
               <SectionHeader title="Recém Atualizados" />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {recent.map((novel) => (
+                {recentNovels.slice(0, 8).map((novel) => (
                   <NovelCard key={novel.id} novel={novel} layout="dense" />
                 ))}
               </div>
@@ -73,7 +74,7 @@ export default function Index() {
           <aside className="space-y-12">
             <section>
               <SectionHeader title="Rankings da Semana" />
-              <RankingTabs novels={novels} />
+              <RankingTabs />
             </section>
           </aside>
         </div>
@@ -81,7 +82,7 @@ export default function Index() {
         <section>
           <SectionHeader title="Mais Populares" />
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
-            {trending.map((novel) => (
+            {trendingNovels.map((novel) => (
               <NovelCard key={novel.id} novel={novel} />
             ))}
           </div>

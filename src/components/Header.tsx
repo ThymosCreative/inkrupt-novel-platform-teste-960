@@ -1,5 +1,14 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Search, Bell, X, Loader2, User, Settings as SettingsIcon, LogOut } from 'lucide-react'
+import {
+  Search,
+  Bell,
+  X,
+  Loader2,
+  User,
+  Settings as SettingsIcon,
+  LogOut,
+  Clock,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -16,6 +25,22 @@ import { useAuth } from '@/hooks/use-auth'
 import { searchNovels, getCoverUrl } from '@/services/api'
 import pb from '@/lib/pocketbase/client'
 
+const getHistory = () => {
+  try {
+    const saved = localStorage.getItem('inkrupt_search_history')
+    return saved ? JSON.parse(saved) : []
+  } catch {
+    return []
+  }
+}
+
+const saveHistory = (q: string) => {
+  if (!q.trim()) return
+  const history = getHistory()
+  const newHistory = [q, ...history.filter((h: string) => h !== q)].slice(0, 5)
+  localStorage.setItem('inkrupt_search_history', JSON.stringify(newHistory))
+}
+
 export function Header() {
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const { user, isAuthenticated, signOut } = useAuth()
@@ -27,9 +52,11 @@ export function Header() {
     navigate('/')
   }
 
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [history, setHistory] = useState<string[]>([])
   const searchRef = useRef<HTMLDivElement>(null)
 
   const navLinks = [
@@ -37,6 +64,10 @@ export function Header() {
     { name: 'Explorar', path: '/explore' },
     { name: 'Escrever', path: '/write' },
   ]
+
+  useEffect(() => {
+    setHistory(getHistory())
+  }, [])
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -47,7 +78,7 @@ export function Header() {
 
     setIsSearching(true)
     const timer = setTimeout(() => {
-      searchNovels(searchQuery.trim())
+      searchNovels({ query: searchQuery.trim(), limit: 5 })
         .then((res) => {
           setSearchResults(res.items)
         })
@@ -71,6 +102,18 @@ export function Header() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  const handleSearchSubmit = (e: React.FormEvent, query: string) => {
+    e.preventDefault()
+    if (query.trim()) {
+      saveHistory(query.trim())
+      navigate(`/search?q=${encodeURIComponent(query.trim())}`)
+      setSearchQuery('')
+      setIsMobileSearchOpen(false)
+      searchRef.current?.blur()
+      setHistory(getHistory())
+    }
+  }
 
   return (
     <>
@@ -102,14 +145,7 @@ export function Header() {
           <div className="flex items-center gap-4">
             <div className="relative hidden sm:block" ref={searchRef}>
               <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  if (searchQuery.trim()) {
-                    navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
-                    setSearchQuery('')
-                    searchRef.current?.blur()
-                  }
-                }}
+                onSubmit={(e) => handleSearchSubmit(e, searchQuery)}
                 className="flex items-center bg-zinc-900 rounded-full px-3 py-1.5 border border-zinc-800 focus-within:border-lime-400 focus-within:ring-1 focus-within:ring-lime-400 transition-all"
               >
                 <Search className="w-4 h-4 text-zinc-400" />
@@ -132,38 +168,64 @@ export function Header() {
               </form>
 
               {searchQuery && (
-                <div className="absolute top-full right-0 mt-2 w-[300px] lg:w-full bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[400px]">
+                <div className="absolute top-full right-0 mt-2 w-[300px] lg:w-[400px] bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[500px]">
                   {isSearching ? (
-                    <div className="flex items-center justify-center p-6 text-zinc-500">
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                    <div className="flex items-center justify-center p-8 text-lime-400">
+                      <Loader2 className="w-6 h-6 animate-spin" />
                     </div>
                   ) : searchResults.length > 0 ? (
                     <div className="overflow-y-auto">
-                      {searchResults.map((novel) => (
+                      <div className="p-2">
+                        {searchResults.map((novel) => (
+                          <Link
+                            key={novel.id}
+                            to={`/novel/${novel.id}`}
+                            onClick={() => {
+                              setSearchQuery('')
+                              saveHistory(searchQuery)
+                              setHistory(getHistory())
+                            }}
+                            className="flex items-center gap-3 p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+                          >
+                            <img
+                              src={getCoverUrl(novel)}
+                              alt={novel.title}
+                              className="w-10 h-14 object-cover rounded bg-zinc-800 shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-bold text-white truncate group-hover:text-lime-400">
+                                {novel.title}
+                              </h4>
+                              <div className="flex items-center gap-2 mt-1 text-xs text-zinc-400">
+                                <span className="truncate">
+                                  {novel.expand?.author?.name || 'Autor'}
+                                </span>
+                                {novel.rating ? (
+                                  <span className="text-lime-400 font-medium flex items-center gap-0.5">
+                                    ★ {novel.rating.toFixed(1)}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                      <div className="p-2 border-t border-zinc-800/50 bg-zinc-900/50">
                         <Link
-                          key={novel.id}
-                          to={`/novel/${novel.id}`}
-                          onClick={() => setSearchQuery('')}
-                          className="flex items-center gap-3 p-3 hover:bg-zinc-800 transition-colors border-b border-zinc-800/50 last:border-0"
+                          to={`/search?q=${encodeURIComponent(searchQuery)}`}
+                          onClick={() => {
+                            setSearchQuery('')
+                            saveHistory(searchQuery)
+                            setHistory(getHistory())
+                          }}
+                          className="flex items-center justify-center p-2 text-sm font-bold text-lime-400 hover:text-lime-300 hover:bg-zinc-800 rounded-lg transition-colors"
                         >
-                          <img
-                            src={getCoverUrl(novel)}
-                            alt={novel.title}
-                            className="w-10 h-14 object-cover rounded bg-zinc-800"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-bold text-white truncate group-hover:text-lime-400">
-                              {novel.title}
-                            </h4>
-                            <p className="text-xs text-zinc-400 truncate mt-0.5">
-                              {novel.expand?.author?.name || 'Autor'}
-                            </p>
-                          </div>
+                          Ver todos os resultados
                         </Link>
-                      ))}
+                      </div>
                     </div>
                   ) : (
-                    <div className="p-6 text-center text-sm text-zinc-500">
+                    <div className="p-8 text-center text-sm text-zinc-500">
                       Nenhum resultado encontrado
                     </div>
                   )}
@@ -174,11 +236,10 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
+              onClick={() => setIsMobileSearchOpen(true)}
               className="sm:hidden text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-full"
             >
-              <Link to="/explore">
-                <Search className="w-5 h-5" />
-              </Link>
+              <Search className="w-5 h-5" />
             </Button>
 
             {isAuthenticated ? (
@@ -186,7 +247,7 @@ export function Header() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="relative text-zinc-400 hover:text-white rounded-full"
+                  className="relative text-zinc-400 hover:text-white rounded-full hidden sm:flex"
                 >
                   <Bell className="w-5 h-5" />
                   <span className="absolute top-0 right-0 w-4 h-4 bg-lime-400 rounded-full text-[10px] text-black font-bold flex items-center justify-center">
@@ -284,6 +345,119 @@ export function Header() {
           </div>
         </div>
       </header>
+
+      {/* Mobile Search Overlay */}
+      {isMobileSearchOpen && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col sm:hidden animate-in fade-in duration-200">
+          <div className="flex items-center gap-3 p-4 border-b border-zinc-800">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMobileSearchOpen(false)}
+              className="shrink-0 text-zinc-400 hover:text-white rounded-full"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+            <form onSubmit={(e) => handleSearchSubmit(e, searchQuery)} className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <input
+                autoFocus
+                type="text"
+                placeholder="Pesquisar obras..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-full py-2 pl-9 pr-10 text-sm text-white focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition-all"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </form>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            {isSearching ? (
+              <div className="flex justify-center p-8">
+                <Loader2 className="w-6 h-6 animate-spin text-lime-400" />
+              </div>
+            ) : searchResults.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {searchResults.map((novel) => (
+                  <Link
+                    key={novel.id}
+                    to={`/novel/${novel.id}`}
+                    onClick={() => {
+                      setSearchQuery('')
+                      setIsMobileSearchOpen(false)
+                      saveHistory(searchQuery)
+                      setHistory(getHistory())
+                    }}
+                    className="flex items-center gap-3 p-2 hover:bg-zinc-800 rounded-xl transition-colors"
+                  >
+                    <img
+                      src={getCoverUrl(novel)}
+                      className="w-12 h-16 object-cover rounded bg-zinc-800 shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-bold text-white truncate">{novel.title}</h4>
+                      <div className="flex items-center gap-2 mt-1 text-xs text-zinc-400">
+                        <span className="truncate">{novel.expand?.author?.name || 'Autor'}</span>
+                        {novel.rating ? (
+                          <span className="text-lime-400 font-medium flex items-center gap-0.5">
+                            ★ {novel.rating.toFixed(1)}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+                <Link
+                  to={`/search?q=${encodeURIComponent(searchQuery)}`}
+                  onClick={() => {
+                    setSearchQuery('')
+                    setIsMobileSearchOpen(false)
+                    saveHistory(searchQuery)
+                    setHistory(getHistory())
+                  }}
+                  className="block p-3 mt-2 text-center text-sm font-bold text-lime-400 bg-lime-400/10 rounded-xl hover:bg-lime-400/20 transition-colors"
+                >
+                  Ver todos os resultados
+                </Link>
+              </div>
+            ) : history.length > 0 && !searchQuery ? (
+              <div>
+                <h4 className="text-xs font-bold text-zinc-500 mb-3 uppercase tracking-wider flex items-center gap-2">
+                  <Clock className="w-3 h-3" /> Buscas Recentes
+                </h4>
+                <div className="flex flex-col gap-1">
+                  {history.map((h) => (
+                    <button
+                      key={h}
+                      onClick={() => {
+                        setSearchQuery(h)
+                        searchRef.current?.querySelector('input')?.focus()
+                      }}
+                      className="text-left px-3 py-2 text-sm text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors flex items-center gap-3"
+                    >
+                      <Search className="w-4 h-4 text-zinc-500" />
+                      {h}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : searchQuery ? (
+              <div className="text-center p-8 text-sm text-zinc-500">
+                Nenhum resultado encontrado
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
+
       <AuthModal isOpen={isAuthOpen} onOpenChange={setIsAuthOpen} />
     </>
   )

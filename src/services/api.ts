@@ -31,9 +31,42 @@ export const getTrendingNovels = async () => {
   })
 }
 
-export const searchNovels = async (query: string, limit: number = 5) => {
+export interface SearchOptions {
+  query?: string
+  status?: string
+  type?: string
+  sort?: string
+  limit?: number
+}
+
+export const searchNovels = async (options: SearchOptions = {}) => {
+  const { query = '', status, type, sort = '-reads', limit = 20 } = options
+
+  let filterStr = ''
+  const filters = []
+  if (status && status !== 'all') filters.push(`status = "${status}"`)
+  if (type && type !== 'all') filters.push(`type = "${type}"`)
+
+  if (sort === 'semantic' && query) {
+    if (filters.length > 0) filterStr = filters.join(' && ')
+    try {
+      const res = await pb.send('/backend/v1/search/semantic', {
+        method: 'POST',
+        body: JSON.stringify({ query, filter: filterStr, k: limit }),
+      })
+      return { items: res.items || [] }
+    } catch (err) {
+      console.error(err)
+      return { items: [] }
+    }
+  }
+
+  if (query) filters.push(`(title ~ "${query}" || genres ~ "${query}")`)
+  if (filters.length > 0) filterStr = filters.join(' && ')
+
   return pb.collection('novels').getList(1, limit, {
-    filter: `title ~ "${query}" || genres ~ "${query}"`,
+    filter: filterStr,
+    sort: sort === 'semantic' ? '-reads' : sort,
     expand: 'author',
   })
 }

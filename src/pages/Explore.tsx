@@ -1,21 +1,13 @@
-import { useState } from 'react'
-import { mockNovels } from '@/lib/mock'
+import { useState, useEffect } from 'react'
+import { getNovels } from '@/services/api'
 import { NovelCard } from '@/components/NovelCard'
 import { cn } from '@/lib/utils'
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination'
 
 const FILTERS = {
   category: ['Todos', 'Fantasia', 'Romance', 'Ação', 'Mistério', 'Xianxia'],
   status: ['Todos', 'Em Andamento', 'Concluído'],
   type: ['Todos', 'Original', 'Tradução'],
-  sort: ['Popularidade', 'Novos', 'Atualização'],
+  sort: ['Popularidade', 'Novos', 'Avaliação'],
 }
 
 export default function Explore() {
@@ -25,6 +17,24 @@ export default function Explore() {
     type: 'Todos',
     sort: 'Popularidade',
   })
+
+  const [novels, setNovels] = useState<any[]>([])
+
+  useEffect(() => {
+    let filterParts = []
+    if (activeFilters.category !== 'Todos') filterParts.push(`genres ~ "${activeFilters.category}"`)
+    if (activeFilters.status !== 'Todos') filterParts.push(`status = "${activeFilters.status}"`)
+    if (activeFilters.type !== 'Todos') filterParts.push(`type = "${activeFilters.type}"`)
+
+    let sortStr = ''
+    if (activeFilters.sort === 'Popularidade') sortStr = '-reads'
+    else if (activeFilters.sort === 'Novos') sortStr = '-created'
+    else if (activeFilters.sort === 'Avaliação') sortStr = '-rating'
+
+    getNovels({ filter: filterParts.join(' && '), sort: sortStr }).then((res) =>
+      setNovels(res.items),
+    )
+  }, [activeFilters])
 
   const updateFilter = (group: keyof typeof FILTERS, value: string) => {
     setActiveFilters((prev) => ({ ...prev, [group]: value }))
@@ -65,7 +75,7 @@ export default function Explore() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8 flex items-center gap-3">
+      <h1 className="text-3xl font-bold mb-8 flex items-center gap-3 text-white">
         <div className="w-1.5 h-8 bg-lime-400 rounded-full" />
         Explorar Biblioteca
       </h1>
@@ -78,53 +88,15 @@ export default function Explore() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 mb-12">
-        {/* Simulating filtered results with the mock array */}
-        {mockNovels
-          .concat(mockNovels)
-          .slice(0, 18)
-          .map((novel, i) => (
-            <NovelCard key={`${novel.id}-${i}`} novel={novel} />
-          ))}
+        {novels.map((novel) => (
+          <NovelCard key={novel.id} novel={novel} />
+        ))}
+        {novels.length === 0 && (
+          <div className="col-span-full text-center text-zinc-500 py-12">
+            Nenhuma obra encontrada.
+          </div>
+        )}
       </div>
-
-      <Pagination>
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious
-              href="#"
-              className="text-zinc-400 hover:text-white hover:bg-zinc-900"
-            />
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationLink
-              href="#"
-              isActive
-              className="bg-lime-400 text-black hover:bg-lime-500 border-none"
-            >
-              1
-            </PaginationLink>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationLink
-              href="#"
-              className="text-zinc-400 hover:text-white hover:bg-zinc-900 border-zinc-800"
-            >
-              2
-            </PaginationLink>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationLink
-              href="#"
-              className="text-zinc-400 hover:text-white hover:bg-zinc-900 border-zinc-800"
-            >
-              3
-            </PaginationLink>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationNext href="#" className="text-zinc-400 hover:text-white hover:bg-zinc-900" />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
     </div>
   )
 }

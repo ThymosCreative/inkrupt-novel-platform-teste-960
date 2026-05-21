@@ -1,4 +1,5 @@
-import { mockNovels } from '@/lib/mock'
+import { useEffect, useState } from 'react'
+import { getNovels } from '@/services/api'
 import { HeroCarousel } from '@/components/home/HeroCarousel'
 import { SectionHeader } from '@/components/SectionHeader'
 import { NovelCard } from '@/components/NovelCard'
@@ -9,12 +10,22 @@ import { ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export default function Index() {
+  const [novels, setNovels] = useState<any[]>([])
+
+  useEffect(() => {
+    getNovels({ sort: '-created' }).then((res) => setNovels(res.items))
+  }, [])
+
+  const trending = [...novels].sort((a, b) => (b.reads || 0) - (a.reads || 0)).slice(0, 8)
+  const recent = [...novels].slice(0, 8)
+  const originals = novels.filter((n) => n.type === 'Original').slice(0, 4)
+  const hot = novels.filter((n) => n.is_hot)
+
   return (
     <div className="pb-16">
-      <HeroCarousel novels={mockNovels} />
+      {hot.length > 0 && <HeroCarousel novels={hot} />}
 
       <div className="container mx-auto px-4 mt-12 space-y-16">
-        {/* Em Alta */}
         <section>
           <SectionHeader
             title="Em Alta esta Semana"
@@ -28,7 +39,7 @@ export default function Index() {
           />
           <ScrollArea className="w-full whitespace-nowrap pb-4">
             <div className="flex w-max space-x-4 p-1">
-              {mockNovels.slice(0, 8).map((novel) => (
+              {trending.map((novel) => (
                 <NovelCard key={novel.id} novel={novel} className="w-[140px] md:w-[160px]" />
               ))}
             </div>
@@ -37,46 +48,40 @@ export default function Index() {
         </section>
 
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Column */}
           <div className="lg:col-span-2 space-y-12">
-            {/* Recém Atualizados */}
             <section>
               <SectionHeader title="Recém Atualizados" />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {mockNovels.slice(5, 13).map((novel) => (
+                {recent.map((novel) => (
                   <NovelCard key={novel.id} novel={novel} layout="dense" />
                 ))}
               </div>
             </section>
 
-            {/* Novidades Originais */}
-            <section>
-              <SectionHeader title="Novidades Originais" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {mockNovels
-                  .filter((n) => n.isOriginal)
-                  .slice(0, 4)
-                  .map((novel) => (
+            {originals.length > 0 && (
+              <section>
+                <SectionHeader title="Novidades Originais" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {originals.map((novel) => (
                     <NovelCard key={novel.id} novel={novel} layout="horizontal" />
                   ))}
-              </div>
-            </section>
+                </div>
+              </section>
+            )}
           </div>
 
-          {/* Sidebar */}
           <aside className="space-y-12">
             <section>
               <SectionHeader title="Rankings da Semana" />
-              <RankingTabs novels={mockNovels} />
+              <RankingTabs novels={novels} />
             </section>
           </aside>
         </div>
 
-        {/* Mais Populares (Grid) */}
         <section>
           <SectionHeader title="Mais Populares" />
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
-            {mockNovels.map((novel) => (
+            {trending.map((novel) => (
               <NovelCard key={novel.id} novel={novel} />
             ))}
           </div>

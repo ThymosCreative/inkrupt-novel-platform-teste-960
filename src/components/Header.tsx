@@ -5,11 +5,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AuthModal } from './AuthModal'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/hooks/use-auth'
 
 export function Header() {
   const [isAuthOpen, setIsAuthOpen] = useState(false)
-  // Mock auth state for UI demonstration
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { user, isAuthenticated } = useAuth()
   const location = useLocation()
 
   const navLinks = [
@@ -65,9 +65,11 @@ export function Header() {
                   <span className="absolute top-1 right-1 w-2 h-2 bg-lime-400 rounded-full"></span>
                 </Button>
                 <Link to="/profile">
-                  <Avatar className="w-9 h-9 border-2 border-transparent hover:border-lime-400 transition-colors cursor-pointer">
-                    <AvatarImage src="https://img.usecurling.com/ppl/thumbnail?seed=user1" />
-                    <AvatarFallback>US</AvatarFallback>
+                  <Avatar className="w-9 h-9 border-2 border-transparent hover:border-lime-400 transition-colors cursor-pointer bg-zinc-800">
+                    <AvatarImage
+                      src={`https://img.usecurling.com/ppl/thumbnail?seed=${user?.id}`}
+                    />
+                    <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                   </Avatar>
                 </Link>
               </div>
@@ -76,15 +78,12 @@ export function Header() {
                 <Button
                   variant="ghost"
                   onClick={() => setIsAuthOpen(true)}
-                  className="hover:bg-zinc-900"
+                  className="hover:bg-zinc-900 text-white"
                 >
                   Entrar
                 </Button>
                 <Button
-                  onClick={() => {
-                    setIsAuthOpen(true)
-                    setIsAuthenticated(true)
-                  }}
+                  onClick={() => setIsAuthOpen(true)}
                   className="bg-lime-400 text-black hover:bg-lime-500 font-bold"
                 >
                   Cadastrar

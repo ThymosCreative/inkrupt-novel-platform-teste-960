@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-21T23:35:24.715Z",
+  "generatedAt": "2026-05-21T23:38:36.086Z",
   "collections": [
     {
       "name": "users",
@@ -131,6 +131,14 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "embedding",
+          "type": "vector",
+          "required": false,
+          "system": false,
+          "vectorDimensions": 1536,
+          "vectorDistance": "l2"
         }
       ],
       "indexes": [

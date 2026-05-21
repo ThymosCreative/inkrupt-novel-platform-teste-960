@@ -8,6 +8,7 @@ import {
   Settings as SettingsIcon,
   LogOut,
   Clock,
+  BookOpen,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -63,6 +64,7 @@ export function Header() {
   const navLinks = [
     { name: 'Início', path: '/' },
     { name: 'Explorar', path: '/explore' },
+    ...(isAuthenticated ? [{ name: 'Biblioteca', path: '/library' }] : []),
     { name: 'Escrever', path: '/write' },
   ]
 
@@ -341,6 +343,15 @@ export function Header() {
                       <Link to="/profile" className="flex items-center w-full text-zinc-300">
                         <User className="mr-2 h-4 w-4" />
                         <span>Meu Perfil</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      asChild
+                      className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800 rounded-md m-1"
+                    >
+                      <Link to="/library" className="flex items-center w-full text-zinc-300">
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        <span>Biblioteca</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem

@@ -30,10 +30,25 @@ export default function Reader() {
 
   const [progress, setProgress] = useState(0)
   const [settings, setSettings] = useState({
-    theme: 'dark', // 'dark' | 'sepia' | 'light'
-    fontSize: 'M', // 'S' | 'M' | 'L' | 'XL'
-    spacing: 'normal', // 'normal' | 'amplo'
+    theme: user?.preferences?.theme || 'dark', // 'dark' | 'sepia' | 'light'
+    fontSize: user?.preferences?.fontSize || 'M', // 'S' | 'M' | 'L' | 'XL'
+    spacing: user?.preferences?.spacing || 'normal', // 'normal' | 'amplo'
   })
+
+  // Keep settings synced if loaded later
+  useEffect(() => {
+    if (user?.preferences) {
+      setSettings((s) => ({ ...s, ...user.preferences }))
+    }
+  }, [user?.preferences])
+
+  const updateSetting = (key: string, value: string) => {
+    const newSettings = { ...settings, [key]: value }
+    setSettings(newSettings)
+    if (user) {
+      pb.collection('users').update(user.id, { preferences: newSettings }).catch(console.error)
+    }
+  }
 
   const fontSizeMap: Record<string, number> = { S: 14, M: 18, L: 22, XL: 26 }
   const spacingMap: Record<string, number> = { normal: 1.6, amplo: 2.2 }
@@ -163,21 +178,21 @@ export default function Reader() {
                 <h4 className="text-sm font-medium text-zinc-400 mb-3">Tema</h4>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setSettings((s) => ({ ...s, theme: 'dark' }))}
+                    onClick={() => updateSetting('theme', 'dark')}
                     className={cn(
                       'flex-1 h-10 rounded-lg bg-black border-2',
                       settings.theme === 'dark' ? 'border-lime-400' : 'border-zinc-800',
                     )}
                   />
                   <button
-                    onClick={() => setSettings((s) => ({ ...s, theme: 'sepia' }))}
+                    onClick={() => updateSetting('theme', 'sepia')}
                     className={cn(
                       'flex-1 h-10 rounded-lg bg-[#f4ecd8] border-2',
                       settings.theme === 'sepia' ? 'border-lime-400' : 'border-zinc-800',
                     )}
                   />
                   <button
-                    onClick={() => setSettings((s) => ({ ...s, theme: 'light' }))}
+                    onClick={() => updateSetting('theme', 'light')}
                     className={cn(
                       'flex-1 h-10 rounded-lg bg-white border-2',
                       settings.theme === 'light' ? 'border-lime-400' : 'border-zinc-800',
@@ -191,7 +206,7 @@ export default function Reader() {
                   {['S', 'M', 'L', 'XL'].map((s) => (
                     <button
                       key={s}
-                      onClick={() => setSettings((p) => ({ ...p, fontSize: s }))}
+                      onClick={() => updateSetting('fontSize', s)}
                       className={cn(
                         'flex-1 h-10 rounded-lg border font-medium transition-colors',
                         settings.fontSize === s
@@ -208,7 +223,7 @@ export default function Reader() {
                 <h4 className="text-sm font-medium text-zinc-400 mb-3">Espaçamento</h4>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setSettings((p) => ({ ...p, spacing: 'normal' }))}
+                    onClick={() => updateSetting('spacing', 'normal')}
                     className={cn(
                       'flex-1 h-10 rounded-lg border font-medium transition-colors',
                       settings.spacing === 'normal'
@@ -219,7 +234,7 @@ export default function Reader() {
                     Normal
                   </button>
                   <button
-                    onClick={() => setSettings((p) => ({ ...p, spacing: 'amplo' }))}
+                    onClick={() => updateSetting('spacing', 'amplo')}
                     className={cn(
                       'flex-1 h-10 rounded-lg border font-medium transition-colors',
                       settings.spacing === 'amplo'

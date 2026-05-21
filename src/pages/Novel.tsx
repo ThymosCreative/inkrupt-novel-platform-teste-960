@@ -7,7 +7,26 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Eye, Star, Lock, List, MessageSquare, Clock, Plus, Loader2, Bookmark } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
+import {
+  Eye,
+  Star,
+  Lock,
+  List,
+  MessageSquare,
+  Clock,
+  Plus,
+  Loader2,
+  Bookmark,
+  CheckCircle,
+  BookOpen,
+} from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 export default function Novel() {
@@ -46,23 +65,39 @@ export default function Novel() {
     }
   }, [id])
 
-  const addToLibrary = async () => {
+  const handleUpdateLibrary = async (status: string) => {
     if (!user) {
       toast.error('Você precisa estar logado para adicionar à biblioteca!')
       return
     }
     try {
       if (libraryEntry) {
-        toast.info('Esta obra já está na sua biblioteca.')
+        const updated = await pb.collection('library_entries').update(libraryEntry.id, { status })
+        setLibraryEntry(updated)
+        toast.success('Status atualizado com sucesso!')
       } else {
-        const newEntry = await pb
-          .collection('library_entries')
-          .create({ user: user.id, novel: novel.id, status: 'plan_to_read' })
+        const newEntry = await pb.collection('library_entries').create({
+          user: user.id,
+          novel: novel.id,
+          status,
+        })
         setLibraryEntry(newEntry)
-        toast.success('Adicionado à biblioteca com sucesso!')
+        toast.success('Adicionado à biblioteca!')
       }
     } catch (e) {
-      toast.error('Erro ao adicionar à biblioteca.')
+      toast.error('Erro ao atualizar a biblioteca.')
+    }
+  }
+
+  const handleRemoveLibrary = async () => {
+    if (libraryEntry) {
+      try {
+        await pb.collection('library_entries').delete(libraryEntry.id)
+        setLibraryEntry(null)
+        toast.success('Obra removida da biblioteca.')
+      } catch (e) {
+        toast.error('Erro ao remover da biblioteca.')
+      }
     }
   }
 
@@ -165,23 +200,61 @@ export default function Novel() {
                   Sem Capítulos
                 </Button>
               )}
-              <Button
-                variant="outline"
-                onClick={addToLibrary}
-                className="w-full sm:w-auto border-zinc-700 bg-zinc-900/50 hover:bg-zinc-800 text-white h-12 rounded-xl text-base"
-              >
-                {libraryEntry ? (
-                  <>
-                    <Bookmark className="w-5 h-5 mr-2 text-lime-400 fill-lime-400" />
-                    Na Biblioteca
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-5 h-5 mr-2" />
-                    Adicionar à Biblioteca
-                  </>
-                )}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full sm:w-auto border-zinc-700 bg-zinc-900/50 hover:bg-zinc-800 text-white h-12 rounded-xl text-base px-6"
+                  >
+                    {libraryEntry ? (
+                      <>
+                        <Bookmark className="w-5 h-5 mr-2 text-lime-400 fill-lime-400" />
+                        {libraryEntry.status === 'reading'
+                          ? 'Lendo'
+                          : libraryEntry.status === 'completed'
+                            ? 'Concluído'
+                            : 'Quero Ler'}
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-5 h-5 mr-2" />
+                        Adicionar à Biblioteca
+                      </>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-zinc-900 border-zinc-800 text-white w-48 rounded-xl">
+                  <DropdownMenuItem
+                    className="focus:bg-zinc-800 cursor-pointer"
+                    onClick={() => handleUpdateLibrary('reading')}
+                  >
+                    <BookOpen className="w-4 h-4 mr-2" /> Lendo
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="focus:bg-zinc-800 cursor-pointer"
+                    onClick={() => handleUpdateLibrary('plan_to_read')}
+                  >
+                    <Clock className="w-4 h-4 mr-2" /> Quero Ler
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="focus:bg-zinc-800 cursor-pointer"
+                    onClick={() => handleUpdateLibrary('completed')}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" /> Concluído
+                  </DropdownMenuItem>
+                  {libraryEntry && (
+                    <>
+                      <DropdownMenuSeparator className="bg-zinc-800" />
+                      <DropdownMenuItem
+                        className="focus:bg-red-900/20 text-red-400 cursor-pointer"
+                        onClick={handleRemoveLibrary}
+                      >
+                        Remover da Biblioteca
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>

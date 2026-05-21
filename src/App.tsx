@@ -10,7 +10,14 @@ import Profile from './pages/Profile'
 import Author from './pages/Author'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
-import { AuthProvider } from './hooks/use-auth'
+import { AuthProvider, useAuth } from './hooks/use-auth'
+import { Navigate } from 'react-router-dom'
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, loading } = useAuth()
+  if (loading) return null
+  return isAuthenticated ? <>{children}</> : <Navigate to="/" />
+}
 
 const App = () => (
   <AuthProvider>
@@ -24,8 +31,22 @@ const App = () => (
             <Route path="/explore" element={<Explore />} />
             <Route path="/novel/:id" element={<Novel />} />
             <Route path="/novel/:id/chapter/:num" element={<Reader />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/write" element={<Author />} />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/write"
+              element={
+                <ProtectedRoute>
+                  <Author />
+                </ProtectedRoute>
+              }
+            />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

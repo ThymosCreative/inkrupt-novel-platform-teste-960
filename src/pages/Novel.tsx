@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Eye, Star, Lock, List, MessageSquare, Clock, Plus, Loader2 } from 'lucide-react'
+import { Eye, Star, Lock, List, MessageSquare, Clock, Plus, Loader2, Bookmark } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 export default function Novel() {
@@ -18,11 +18,22 @@ export default function Novel() {
   const [chapters, setChapters] = useState<any[]>([])
   const [reviews, setReviews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [libraryEntry, setLibraryEntry] = useState<any>(null)
 
   useEffect(() => {
     if (id) {
       Promise.all([getNovel(id), getChapters(id), getReviews(id)])
-        .then(([n, c, r]) => {
+        .then(async ([n, c, r]) => {
+          if (user) {
+            try {
+              const entries = await pb
+                .collection('library_entries')
+                .getFullList({ filter: `user = "${user.id}" && novel = "${n.id}"` })
+              if (entries.length > 0) setLibraryEntry(entries[0])
+            } catch {
+              /* intentionally ignored */
+            }
+          }
           setNovel(n)
           setChapters(c)
           setReviews(r)
@@ -41,15 +52,13 @@ export default function Novel() {
       return
     }
     try {
-      const existing = await pb
-        .collection('library_entries')
-        .getFullList({ filter: `user = "${user.id}" && novel = "${novel.id}"` })
-      if (existing.length > 0) {
+      if (libraryEntry) {
         toast.info('Esta obra já está na sua biblioteca.')
       } else {
-        await pb
+        const newEntry = await pb
           .collection('library_entries')
           .create({ user: user.id, novel: novel.id, status: 'plan_to_read' })
+        setLibraryEntry(newEntry)
         toast.success('Adicionado à biblioteca com sucesso!')
       }
     } catch (e) {
@@ -161,8 +170,17 @@ export default function Novel() {
                 onClick={addToLibrary}
                 className="w-full sm:w-auto border-zinc-700 bg-zinc-900/50 hover:bg-zinc-800 text-white h-12 rounded-xl text-base"
               >
-                <Plus className="w-5 h-5 mr-2" />
-                Adicionar à Biblioteca
+                {libraryEntry ? (
+                  <>
+                    <Bookmark className="w-5 h-5 mr-2 text-lime-400 fill-lime-400" />
+                    Na Biblioteca
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5 mr-2" />
+                    Adicionar à Biblioteca
+                  </>
+                )}
               </Button>
             </div>
           </div>

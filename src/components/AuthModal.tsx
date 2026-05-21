@@ -43,33 +43,33 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[400px] bg-zinc-950 border-zinc-800 p-0 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-3xl">
+      <DialogContent className="sm:max-w-[400px] bg-zinc-900 border border-zinc-800 p-8 rounded-2xl shadow-2xl text-white">
         <Tabs defaultValue="login" className="w-full">
-          <div className="p-6 pb-2">
+          <div className="pb-4">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-center mb-4 text-white">
+              <DialogTitle className="text-2xl font-bold text-center mb-6 text-white">
                 Bem-vindo à Inkrupt
               </DialogTitle>
             </DialogHeader>
-            <TabsList className="grid w-full grid-cols-2 bg-zinc-900 rounded-lg p-1">
+            <TabsList className="grid w-full grid-cols-2 bg-zinc-800 rounded-full p-1 h-12">
               <TabsTrigger
                 value="login"
-                className="rounded-md data-[state=active]:bg-zinc-800 data-[state=active]:text-lime-400"
+                className="rounded-full data-[state=active]:bg-lime-400 data-[state=active]:text-black font-medium transition-all"
               >
                 Entrar
               </TabsTrigger>
               <TabsTrigger
                 value="register"
-                className="rounded-md data-[state=active]:bg-zinc-800 data-[state=active]:text-lime-400"
+                className="rounded-full data-[state=active]:bg-lime-400 data-[state=active]:text-black font-medium transition-all"
               >
                 Cadastrar
               </TabsTrigger>
             </TabsList>
           </div>
 
-          <TabsContent value="login" className="p-6 pt-2 space-y-4">
+          <TabsContent value="login" className="space-y-4 pt-2">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-white">
+              <Label htmlFor="email" className="text-zinc-300">
                 Email
               </Label>
               <Input
@@ -78,12 +78,12 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu@email.com"
-                className="bg-zinc-900 border-zinc-800 focus-visible:ring-lime-400 text-white"
+                className="bg-zinc-800 border-zinc-700 rounded-xl text-sm focus-visible:ring-1 focus-visible:ring-lime-400 focus-visible:border-lime-400 text-white h-11"
               />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-white">
+                <Label htmlFor="password" className="text-zinc-300">
                   Senha
                 </Label>
               </div>
@@ -92,11 +92,11 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-zinc-900 border-zinc-800 focus-visible:ring-lime-400 text-white"
+                className="bg-zinc-800 border-zinc-700 rounded-xl text-sm focus-visible:ring-1 focus-visible:ring-lime-400 focus-visible:border-lime-400 text-white h-11"
               />
             </div>
             <Button
-              className="w-full bg-lime-400 text-black hover:bg-lime-500 font-bold"
+              className="w-full bg-lime-400 text-black hover:bg-lime-500 font-bold rounded-xl h-11"
               onClick={() => handleAuth(true)}
               disabled={loading}
             >
@@ -104,9 +104,9 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
             </Button>
           </TabsContent>
 
-          <TabsContent value="register" className="p-6 pt-2 space-y-4">
+          <TabsContent value="register" className="space-y-4 pt-2">
             <div className="space-y-2">
-              <Label htmlFor="reg-name" className="text-white">
+              <Label htmlFor="reg-name" className="text-zinc-300">
                 Nome
               </Label>
               <Input
@@ -115,11 +115,11 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Seu nome"
-                className="bg-zinc-900 border-zinc-800 focus-visible:ring-lime-400 text-white"
+                className="bg-zinc-800 border-zinc-700 rounded-xl text-sm focus-visible:ring-1 focus-visible:ring-lime-400 focus-visible:border-lime-400 text-white h-11"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reg-email" className="text-white">
+              <Label htmlFor="reg-email" className="text-zinc-300">
                 Email
               </Label>
               <Input
@@ -128,11 +128,11 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu@email.com"
-                className="bg-zinc-900 border-zinc-800 focus-visible:ring-lime-400 text-white"
+                className="bg-zinc-800 border-zinc-700 rounded-xl text-sm focus-visible:ring-1 focus-visible:ring-lime-400 focus-visible:border-lime-400 text-white h-11"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reg-password" className="text-white">
+              <Label htmlFor="reg-password" className="text-zinc-300">
                 Senha
               </Label>
               <Input
@@ -140,11 +140,11 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-zinc-900 border-zinc-800 focus-visible:ring-lime-400 text-white"
+                className="bg-zinc-800 border-zinc-700 rounded-xl text-sm focus-visible:ring-1 focus-visible:ring-lime-400 focus-visible:border-lime-400 text-white h-11"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reg-confirm" className="text-white">
+              <Label htmlFor="reg-confirm" className="text-zinc-300">
                 Confirmar Senha
               </Label>
               <Input
@@ -152,11 +152,11 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="bg-zinc-900 border-zinc-800 focus-visible:ring-lime-400 text-white"
+                className="bg-zinc-800 border-zinc-700 rounded-xl text-sm focus-visible:ring-1 focus-visible:ring-lime-400 focus-visible:border-lime-400 text-white h-11"
               />
             </div>
             <Button
-              className="w-full bg-lime-400 text-black hover:bg-lime-500 font-bold"
+              className="w-full bg-lime-400 text-black hover:bg-lime-500 font-bold rounded-xl h-11"
               onClick={() => handleAuth(false)}
               disabled={loading}
             >
@@ -165,19 +165,19 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
           </TabsContent>
         </Tabs>
 
-        <div className="p-6 pt-0 space-y-4">
+        <div className="pt-6 space-y-4">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-zinc-800"></div>
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-zinc-950 px-2 text-zinc-500">Ou continue com</span>
+              <span className="bg-zinc-900 px-2 text-zinc-500">Ou continue com</span>
             </div>
           </div>
           <Button
             variant="outline"
             onClick={handleSocialLogin}
-            className="w-full bg-zinc-800 text-white border-zinc-700 hover:bg-zinc-700 h-10"
+            className="w-full bg-zinc-800 text-white border-zinc-700 hover:bg-zinc-700 h-11 rounded-xl"
           >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
               <path

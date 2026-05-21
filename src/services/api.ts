@@ -41,5 +41,5 @@ export const getReviews = async (novelId: string) => {
 export const getLibrary = async (userId: string) => {
   return pb
     .collection('library_entries')
-    .getFullList({ filter: `user = "${userId}"`, expand: 'novel', sort: '-updated' })
+    .getFullList({ filter: `user = "${userId}"`, expand: 'novel,last_chapter', sort: '-updated' })
 }

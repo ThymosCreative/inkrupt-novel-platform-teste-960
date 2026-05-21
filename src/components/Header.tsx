@@ -62,7 +62,9 @@ export function Header() {
                   className="relative text-zinc-400 hover:text-white rounded-full"
                 >
                   <Bell className="w-5 h-5" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-lime-400 rounded-full"></span>
+                  <span className="absolute top-0 right-0 w-4 h-4 bg-lime-400 rounded-full text-[10px] text-black font-bold flex items-center justify-center">
+                    3
+                  </span>
                 </Button>
                 <Link to="/profile">
                   <Avatar className="w-9 h-9 border-2 border-lime-400 transition-colors cursor-pointer bg-zinc-800">
@@ -80,15 +82,15 @@ export function Header() {
             ) : (
               <div className="hidden md:flex items-center gap-3">
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   onClick={() => setIsAuthOpen(true)}
-                  className="hover:bg-zinc-900 text-white"
+                  className="border-zinc-700 hover:bg-zinc-800 text-white bg-transparent rounded-xl h-10 px-6"
                 >
                   Entrar
                 </Button>
                 <Button
                   onClick={() => setIsAuthOpen(true)}
-                  className="bg-lime-400 text-black hover:bg-lime-500 font-bold"
+                  className="bg-lime-400 text-black hover:bg-lime-500 font-bold rounded-xl h-10 px-6"
                 >
                   Cadastrar
                 </Button>

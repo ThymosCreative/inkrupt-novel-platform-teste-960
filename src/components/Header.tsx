@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
 import { searchNovels, getCoverUrl } from '@/services/api'
 import pb from '@/lib/pocketbase/client'
+import { useRealtime } from '@/hooks/use-realtime'
 
 const getHistory = () => {
   try {
@@ -61,12 +62,38 @@ export function Header() {
   const [selectedIndex, setSelectedIndex] = useState(-1)
   const searchRef = useRef<HTMLDivElement>(null)
 
+  const [libraryCount, setLibraryCount] = useState(0)
+
   const navLinks = [
     { name: 'Início', path: '/' },
     { name: 'Explorar', path: '/explore' },
-    ...(isAuthenticated ? [{ name: 'Biblioteca', path: '/library' }] : []),
+    ...(isAuthenticated
+      ? [{ name: 'Biblioteca', path: '/library', badge: libraryCount > 0 ? libraryCount : null }]
+      : []),
     { name: 'Escrever', path: '/write' },
   ]
+
+  useEffect(() => {
+    if (user) {
+      pb.collection('library_entries')
+        .getFullList({ filter: `user = "${user.id}"` })
+        .then((list) => setLibraryCount(list.length))
+        .catch(() => {})
+    } else {
+      setLibraryCount(0)
+    }
+  }, [user])
+
+  useRealtime(
+    'library_entries',
+    (e) => {
+      if (!user) return
+      if (e.action === 'create' && e.record.user === user.id) setLibraryCount((c) => c + 1)
+      if (e.action === 'delete' && e.record.user === user.id)
+        setLibraryCount((c) => Math.max(0, c - 1))
+    },
+    !!user,
+  )
 
   useEffect(() => {
     setHistory(getHistory())
@@ -163,11 +190,16 @@ export function Header() {
                   key={link.path}
                   to={link.path}
                   className={cn(
-                    'text-sm font-medium transition-colors hover:text-lime-400',
+                    'text-sm font-medium transition-colors hover:text-lime-400 flex items-center gap-1.5',
                     location.pathname === link.path ? 'text-lime-400' : 'text-zinc-400',
                   )}
                 >
                   {link.name}
+                  {link.badge != null && (
+                    <span className="bg-lime-400 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                      {link.badge}
+                    </span>
+                  )}
                 </Link>
               ))}
             </nav>

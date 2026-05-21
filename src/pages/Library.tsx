@@ -4,14 +4,16 @@ import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { getCoverUrl } from '@/services/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
 import { Loader2, BookOpen, Clock, CheckCircle } from 'lucide-react'
+import { useRealtime } from '@/hooks/use-realtime'
 
 export default function Library() {
   const { user } = useAuth()
   const [entries, setEntries] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const loadLibrary = () => {
     if (user) {
       pb.collection('library_entries')
         .getFullList({
@@ -25,7 +27,19 @@ export default function Library() {
         })
         .catch(console.error)
     }
+  }
+
+  useEffect(() => {
+    loadLibrary()
   }, [user])
+
+  useRealtime(
+    'library_entries',
+    () => {
+      loadLibrary()
+    },
+    !!user,
+  )
 
   if (loading) {
     return (
@@ -42,7 +56,19 @@ export default function Library() {
   const EntryGrid = ({ items }: { items: any[] }) => {
     if (items.length === 0) {
       return (
-        <div className="py-20 text-center text-zinc-500">Nenhuma obra encontrada nesta lista.</div>
+        <div className="py-20 text-center flex flex-col items-center justify-center">
+          <BookOpen className="w-12 h-12 text-zinc-600 mb-4" />
+          <h3 className="text-xl font-bold text-white mb-2">Sua lista está vazia</h3>
+          <p className="text-zinc-400 mb-6 max-w-md">
+            Você ainda não adicionou nenhuma obra a esta lista. Que tal explorar novas histórias
+            incríveis?
+          </p>
+          <Link to="/explore">
+            <Button className="bg-lime-400 text-black hover:bg-lime-500 font-bold px-8">
+              Explorar Obras
+            </Button>
+          </Link>
+        </div>
       )
     }
     return (

@@ -69,8 +69,14 @@ export default function Reader() {
               .getFullList({ filter: `user = "${user.id}" && novel = "${id}"` })
               .then((entries) => {
                 if (entries.length > 0) {
+                  if (entries[0].last_chapter !== c.id || entries[0].status !== 'reading') {
+                    pb.collection('library_entries')
+                      .update(entries[0].id, { last_chapter: c.id, status: 'reading' })
+                      .catch(console.error)
+                  }
+                } else {
                   pb.collection('library_entries')
-                    .update(entries[0].id, { last_chapter: c.id, status: 'reading' })
+                    .create({ user: user.id, novel: id, status: 'reading', last_chapter: c.id })
                     .catch(console.error)
                 }
               })
@@ -118,13 +124,13 @@ export default function Reader() {
   }
 
   const themeClasses = {
-    dark: 'bg-black text-zinc-300',
+    dark: 'bg-slate-950 text-slate-300',
     sepia: 'bg-[#f4ecd8] text-[#5b4636]',
     light: 'bg-white text-zinc-900',
   }
 
   const headerThemeClasses = {
-    dark: 'bg-black/90 border-zinc-900',
+    dark: 'bg-slate-950/90 border-slate-900',
     sepia: 'bg-[#f4ecd8]/90 border-[#e6dcc0]',
     light: 'bg-white/90 border-zinc-200',
   }
@@ -180,7 +186,7 @@ export default function Reader() {
                   <button
                     onClick={() => updateSetting('theme', 'dark')}
                     className={cn(
-                      'flex-1 h-10 rounded-lg bg-black border-2',
+                      'flex-1 h-10 rounded-lg bg-slate-950 border-2',
                       settings.theme === 'dark' ? 'border-lime-400' : 'border-zinc-800',
                     )}
                   />

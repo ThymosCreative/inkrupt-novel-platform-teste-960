@@ -47,12 +47,13 @@ export const searchNovels = async (options: SearchOptions = {}) => {
   if (status && status !== 'all') filters.push(`status = "${status}"`)
   if (type && type !== 'all') filters.push(`type = "${type}"`)
 
-  if (sort === 'semantic' && query) {
-    if (filters.length > 0) filterStr = filters.join(' && ')
+  if (filters.length > 0) filterStr = filters.join(' && ')
+
+  if (query) {
     try {
-      const res = await pb.send('/backend/v1/search/semantic', {
+      const res = await pb.send('/backend/v1/search', {
         method: 'POST',
-        body: JSON.stringify({ query, filter: filterStr, k: limit }),
+        body: JSON.stringify({ query, filter: filterStr, k: limit, sort }),
       })
       return { items: res.items || [] }
     } catch (err) {
@@ -60,9 +61,6 @@ export const searchNovels = async (options: SearchOptions = {}) => {
       return { items: [] }
     }
   }
-
-  if (query) filters.push(`(title ~ "${query}" || genres ~ "${query}")`)
-  if (filters.length > 0) filterStr = filters.join(' && ')
 
   return pb.collection('novels').getList(1, limit, {
     filter: filterStr,

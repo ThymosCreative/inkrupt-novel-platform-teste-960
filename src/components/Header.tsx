@@ -57,6 +57,7 @@ export function Header() {
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [history, setHistory] = useState<string[]>([])
+  const [selectedIndex, setSelectedIndex] = useState(-1)
   const searchRef = useRef<HTMLDivElement>(null)
 
   const navLinks = [
@@ -77,6 +78,7 @@ export function Header() {
     }
 
     setIsSearching(true)
+    setSelectedIndex(-1)
     const timer = setTimeout(() => {
       searchNovels({ query: searchQuery.trim(), limit: 5 })
         .then((res) => {
@@ -92,6 +94,33 @@ export function Header() {
 
     return () => clearTimeout(timer)
   }, [searchQuery])
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isSearching && searchResults.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setSelectedIndex((prev) => Math.min(prev + 1, searchResults.length))
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setSelectedIndex((prev) => Math.max(prev - 1, -1))
+      } else if (e.key === 'Enter') {
+        if (selectedIndex >= 0) {
+          e.preventDefault()
+          if (selectedIndex === searchResults.length) {
+            navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+          } else {
+            const novel = searchResults[selectedIndex]
+            navigate(`/novel/${novel.id}`)
+          }
+          setSearchQuery('')
+          saveHistory(searchQuery)
+          setHistory(getHistory())
+          searchRef.current?.blur()
+          setIsMobileSearchOpen(false)
+        }
+      }
+    }
+  }
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -154,6 +183,7 @@ export function Header() {
                   placeholder="Pesquisar obras..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   className="bg-transparent border-none text-sm text-white focus:outline-none focus:ring-0 ml-2 w-48 lg:w-64 placeholder:text-zinc-600"
                 />
                 {searchQuery && (
@@ -176,7 +206,7 @@ export function Header() {
                   ) : searchResults.length > 0 ? (
                     <div className="overflow-y-auto">
                       <div className="p-2">
-                        {searchResults.map((novel) => (
+                        {searchResults.map((novel, idx) => (
                           <Link
                             key={novel.id}
                             to={`/novel/${novel.id}`}
@@ -185,7 +215,10 @@ export function Header() {
                               saveHistory(searchQuery)
                               setHistory(getHistory())
                             }}
-                            className="flex items-center gap-3 p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+                            className={cn(
+                              'flex items-center gap-3 p-2 rounded-lg transition-colors',
+                              selectedIndex === idx ? 'bg-zinc-800' : 'hover:bg-zinc-800',
+                            )}
                           >
                             <img
                               src={getCoverUrl(novel)}
@@ -218,7 +251,12 @@ export function Header() {
                             saveHistory(searchQuery)
                             setHistory(getHistory())
                           }}
-                          className="flex items-center justify-center p-2 text-sm font-bold text-lime-400 hover:text-lime-300 hover:bg-zinc-800 rounded-lg transition-colors"
+                          className={cn(
+                            'flex items-center justify-center p-2 text-sm font-bold text-lime-400 hover:text-lime-300 rounded-lg transition-colors',
+                            selectedIndex === searchResults.length
+                              ? 'bg-zinc-800'
+                              : 'hover:bg-zinc-800',
+                          )}
                         >
                           Ver todos os resultados
                         </Link>
@@ -366,6 +404,7 @@ export function Header() {
                 placeholder="Pesquisar obras..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
                 className="w-full bg-zinc-900 border border-zinc-800 rounded-full py-2 pl-9 pr-10 text-sm text-white focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition-all"
               />
               {searchQuery && (
@@ -386,7 +425,7 @@ export function Header() {
               </div>
             ) : searchResults.length > 0 ? (
               <div className="flex flex-col gap-2">
-                {searchResults.map((novel) => (
+                {searchResults.map((novel, idx) => (
                   <Link
                     key={novel.id}
                     to={`/novel/${novel.id}`}
@@ -396,7 +435,10 @@ export function Header() {
                       saveHistory(searchQuery)
                       setHistory(getHistory())
                     }}
-                    className="flex items-center gap-3 p-2 hover:bg-zinc-800 rounded-xl transition-colors"
+                    className={cn(
+                      'flex items-center gap-3 p-2 rounded-xl transition-colors',
+                      selectedIndex === idx ? 'bg-zinc-800' : 'hover:bg-zinc-800',
+                    )}
                   >
                     <img
                       src={getCoverUrl(novel)}
@@ -423,7 +465,12 @@ export function Header() {
                     saveHistory(searchQuery)
                     setHistory(getHistory())
                   }}
-                  className="block p-3 mt-2 text-center text-sm font-bold text-lime-400 bg-lime-400/10 rounded-xl hover:bg-lime-400/20 transition-colors"
+                  className={cn(
+                    'block p-3 mt-2 text-center text-sm font-bold text-lime-400 bg-lime-400/10 rounded-xl transition-colors',
+                    selectedIndex === searchResults.length
+                      ? 'bg-lime-400/30'
+                      : 'hover:bg-lime-400/20',
+                  )}
                 >
                   Ver todos os resultados
                 </Link>

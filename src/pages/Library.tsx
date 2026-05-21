@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { getCoverUrl } from '@/services/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-import { Loader2, BookOpen, Clock, CheckCircle } from 'lucide-react'
+import { Loader2, BookOpen, Clock, CheckCircle, List } from 'lucide-react'
 import { useRealtime } from '@/hooks/use-realtime'
 
 export default function Library() {
@@ -49,6 +49,7 @@ export default function Library() {
     )
   }
 
+  const all = entries
   const reading = entries.filter((e) => e.status === 'reading')
   const planToRead = entries.filter((e) => e.status === 'plan_to_read')
   const completed = entries.filter((e) => e.status === 'completed')
@@ -102,8 +103,14 @@ export default function Library() {
     <div className="container mx-auto px-4 py-12 max-w-6xl min-h-[calc(100vh-4rem)]">
       <h1 className="text-3xl font-black text-white mb-8">Minha Biblioteca</h1>
 
-      <Tabs defaultValue="reading" className="w-full">
+      <Tabs defaultValue="all" className="w-full">
         <TabsList className="bg-zinc-900 border border-zinc-800 mb-8 flex w-full md:w-auto overflow-x-auto justify-start h-auto p-1 rounded-xl">
+          <TabsTrigger
+            value="all"
+            className="flex items-center gap-2 py-2.5 rounded-lg data-[state=active]:bg-zinc-800 data-[state=active]:text-lime-400"
+          >
+            <List className="w-4 h-4" /> Todas ({all.length})
+          </TabsTrigger>
           <TabsTrigger
             value="reading"
             className="flex items-center gap-2 py-2.5 rounded-lg data-[state=active]:bg-zinc-800 data-[state=active]:text-lime-400"
@@ -124,6 +131,9 @@ export default function Library() {
           </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="all">
+          <EntryGrid items={all} />
+        </TabsContent>
         <TabsContent value="reading">
           <EntryGrid items={reading} />
         </TabsContent>

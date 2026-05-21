@@ -7,6 +7,8 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { AuthModal } from '@/components/AuthModal'
+import { useRealtime } from '@/hooks/use-realtime'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -38,21 +40,26 @@ export default function Novel() {
   const [reviews, setReviews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [libraryEntry, setLibraryEntry] = useState<any>(null)
+  const [isAuthOpen, setIsAuthOpen] = useState(false)
+
+  const loadLibraryEntry = async (novelId: string) => {
+    if (!user) return
+    try {
+      const entries = await pb
+        .collection('library_entries')
+        .getFullList({ filter: `user = "${user.id}" && novel = "${novelId}"` })
+      if (entries.length > 0) setLibraryEntry(entries[0])
+      else setLibraryEntry(null)
+    } catch {
+      /* intentionally ignored */
+    }
+  }
 
   useEffect(() => {
     if (id) {
       Promise.all([getNovel(id), getChapters(id), getReviews(id)])
         .then(async ([n, c, r]) => {
-          if (user) {
-            try {
-              const entries = await pb
-                .collection('library_entries')
-                .getFullList({ filter: `user = "${user.id}" && novel = "${n.id}"` })
-              if (entries.length > 0) setLibraryEntry(entries[0])
-            } catch {
-              /* intentionally ignored */
-            }
-          }
+          await loadLibraryEntry(n.id)
           setNovel(n)
           setChapters(c)
           setReviews(r)
@@ -63,11 +70,25 @@ export default function Novel() {
           setLoading(false)
         })
     }
-  }, [id])
+  }, [id, user])
+
+  useRealtime(
+    'library_entries',
+    (e) => {
+      if (user && novel && e.record.novel === novel.id && e.record.user === user.id) {
+        if (e.action === 'delete') {
+          setLibraryEntry(null)
+        } else {
+          setLibraryEntry(e.record)
+        }
+      }
+    },
+    !!user && !!novel,
+  )
 
   const handleUpdateLibrary = async (status: string) => {
     if (!user) {
-      toast.error('Você precisa estar logado para adicionar à biblioteca!')
+      setIsAuthOpen(true)
       return
     }
     try {
@@ -414,6 +435,7 @@ export default function Novel() {
           </Tabs>
         </div>
       </div>
+      <AuthModal isOpen={isAuthOpen} onOpenChange={setIsAuthOpen} />
     </div>
   )
 }

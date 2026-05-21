@@ -65,11 +65,15 @@ export function Header() {
                   <span className="absolute top-1 right-1 w-2 h-2 bg-lime-400 rounded-full"></span>
                 </Button>
                 <Link to="/profile">
-                  <Avatar className="w-9 h-9 border-2 border-transparent hover:border-lime-400 transition-colors cursor-pointer bg-zinc-800">
+                  <Avatar className="w-9 h-9 border-2 border-lime-400 transition-colors cursor-pointer bg-zinc-800">
                     <AvatarImage
                       src={`https://img.usecurling.com/ppl/thumbnail?seed=${user?.id}`}
                     />
-                    <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                    <AvatarFallback>
+                      {user?.name?.charAt(0).toUpperCase() ||
+                        user?.email?.charAt(0).toUpperCase() ||
+                        'U'}
+                    </AvatarFallback>
                   </Avatar>
                 </Link>
               </div>

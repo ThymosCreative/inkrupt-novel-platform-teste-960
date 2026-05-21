@@ -2,6 +2,13 @@ import { useState, useEffect } from 'react'
 import { getNovels } from '@/services/api'
 import { NovelCard } from '@/components/NovelCard'
 import { cn } from '@/lib/utils'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 const FILTERS = {
   category: ['Todos', 'Fantasia', 'Romance', 'Ação', 'Mistério', 'Xianxia'],
@@ -15,7 +22,7 @@ export default function Explore() {
     category: 'Todos',
     status: 'Todos',
     type: 'Todos',
-    sort: 'Popularidade',
+    sort: 'Mais lidos',
   })
 
   const [novels, setNovels] = useState<any[]>([])
@@ -27,9 +34,9 @@ export default function Explore() {
     if (activeFilters.type !== 'Todos') filterParts.push(`type = "${activeFilters.type}"`)
 
     let sortStr = ''
-    if (activeFilters.sort === 'Popularidade') sortStr = '-reads'
-    else if (activeFilters.sort === 'Novos') sortStr = '-created'
-    else if (activeFilters.sort === 'Avaliação') sortStr = '-rating'
+    if (activeFilters.sort === 'Mais lidos') sortStr = '-reads'
+    else if (activeFilters.sort === 'Mais recentes') sortStr = '-created'
+    else if (activeFilters.sort === 'Mais avaliados') sortStr = '-rating'
 
     getNovels({ filter: filterParts.join(' && '), sort: sortStr }).then((res) =>
       setNovels(res.items),
@@ -84,7 +91,35 @@ export default function Explore() {
         <PillGroup title="Categoria" group="category" options={FILTERS.category} />
         <PillGroup title="Status" group="status" options={FILTERS.status} />
         <PillGroup title="Tipo" group="type" options={FILTERS.type} />
-        <PillGroup title="Ordenar por" group="sort" options={FILTERS.sort} />
+
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
+          <span className="text-zinc-500 text-sm font-medium w-24 shrink-0">Ordenar por</span>
+          <Select value={activeFilters.sort} onValueChange={(val) => updateFilter('sort', val)}>
+            <SelectTrigger className="w-[200px] bg-zinc-900 border-zinc-800 text-white rounded-xl focus:ring-lime-400">
+              <SelectValue placeholder="Ordenar por" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800 text-white rounded-xl">
+              <SelectItem
+                value="Mais lidos"
+                className="focus:bg-zinc-800 focus:text-lime-400 cursor-pointer"
+              >
+                Mais lidos
+              </SelectItem>
+              <SelectItem
+                value="Mais avaliados"
+                className="focus:bg-zinc-800 focus:text-lime-400 cursor-pointer"
+              >
+                Mais avaliados
+              </SelectItem>
+              <SelectItem
+                value="Mais recentes"
+                className="focus:bg-zinc-800 focus:text-lime-400 cursor-pointer"
+              >
+                Mais recentes
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 mb-12">

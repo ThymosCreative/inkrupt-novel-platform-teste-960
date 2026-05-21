@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { mockNovels } from '@/lib/mock'
+import { getNovel, getChapterByNum, getChapters } from '@/services/api'
+import pb from '@/lib/pocketbase/client'
+import { useAuth } from '@/hooks/use-auth'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Slider } from '@/components/ui/slider'
 import {
   Settings,
   List,
@@ -11,47 +12,105 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
+  Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function Reader() {
   const { id, num } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const chapterNum = parseInt(num || '1', 10)
 
-  const novel = mockNovels.find((n) => n.id === id) || mockNovels[0]
-  const chapter = novel.chapters[chapterNum - 1]
+  const [novel, setNovel] = useState<any>(null)
+  const [chapter, setChapter] = useState<any>(null)
+  const [totalChapters, setTotalChapters] = useState(0)
+  const [loading, setLoading] = useState(true)
 
   const [progress, setProgress] = useState(0)
   const [settings, setSettings] = useState({
     theme: 'dark', // 'dark' | 'sepia' | 'light'
-    fontSize: 18,
+    fontSize: 'M', // 'S' | 'M' | 'L' | 'XL'
+    spacing: 'normal', // 'normal' | 'amplo'
   })
+
+  const fontSizeMap: Record<string, number> = { S: 14, M: 18, L: 22, XL: 26 }
+  const spacingMap: Record<string, number> = { normal: 1.6, amplo: 2.2 }
+
+  useEffect(() => {
+    if (id && num) {
+      setLoading(true)
+      Promise.all([getNovel(id), getChapterByNum(id, chapterNum), getChapters(id)])
+        .then(([n, c, clist]) => {
+          setNovel(n)
+          setChapter(c)
+          setTotalChapters(clist.length)
+          setLoading(false)
+          window.scrollTo(0, 0)
+
+          if (user && c) {
+            pb.collection('library_entries')
+              .getFullList({ filter: `user = "${user.id}" && novel = "${id}"` })
+              .then((entries) => {
+                if (entries.length > 0) {
+                  pb.collection('library_entries')
+                    .update(entries[0].id, { last_chapter: c.id, status: 'reading' })
+                    .catch(console.error)
+                }
+              })
+              .catch(console.error)
+          }
+        })
+        .catch((err) => {
+          console.error(err)
+          setLoading(false)
+        })
+    }
+  }, [id, num, user])
 
   useEffect(() => {
     const handleScroll = () => {
       const totalScroll = document.documentElement.scrollTop
       const windowHeight =
         document.documentElement.scrollHeight - document.documentElement.clientHeight
-      const scroll = `${(totalScroll / windowHeight) * 100}`
+      const scroll = windowHeight > 0 ? (totalScroll / windowHeight) * 100 : 0
       setProgress(Number(scroll))
     }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  if (!chapter) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white">
-        Capítulo não encontrado.
+      <div className="min-h-screen flex items-center justify-center text-lime-400 bg-black">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    )
+  }
+
+  if (!chapter || !novel) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white bg-black">
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-4">Capítulo não encontrado</h2>
+          <Link to={`/novel/${id}`} className="text-lime-400 hover:underline">
+            Voltar para a obra
+          </Link>
+        </div>
       </div>
     )
   }
 
   const themeClasses = {
     dark: 'bg-black text-zinc-300',
-    sepia: 'bg-[#1e1c18] text-[#c9bfae]',
-    light: 'bg-zinc-50 text-zinc-900',
+    sepia: 'bg-[#f4ecd8] text-[#5b4636]',
+    light: 'bg-white text-zinc-900',
+  }
+
+  const headerThemeClasses = {
+    dark: 'bg-black/90 border-zinc-900',
+    sepia: 'bg-[#f4ecd8]/90 border-[#e6dcc0]',
+    light: 'bg-white/90 border-zinc-200',
   }
 
   return (
@@ -61,37 +120,32 @@ export default function Reader() {
         themeClasses[settings.theme as keyof typeof themeClasses],
       )}
     >
-      {/* Reading Progress */}
-      <div className="fixed top-0 left-0 w-full h-0.5 bg-zinc-900 z-50">
+      <div className="fixed top-0 left-0 w-full h-0.5 bg-black/10 z-50">
         <div
           className="h-full bg-lime-400 transition-all duration-150 ease-out"
           style={{ width: `${progress}%` }}
         />
       </div>
 
-      {/* Sticky Header */}
       <header
         className={cn(
           'sticky top-0 z-40 w-full backdrop-blur-md border-b transition-colors',
-          settings.theme === 'light'
-            ? 'bg-white/90 border-zinc-200'
-            : 'bg-black/80 border-zinc-900',
+          headerThemeClasses[settings.theme as keyof typeof headerThemeClasses],
         )}
       >
         <div className="container mx-auto px-4 h-16 flex items-center justify-between max-w-4xl">
           <Link
             to={`/novel/${novel.id}`}
-            className="flex items-center gap-3 text-sm font-medium hover:text-lime-400 transition-colors"
+            className="flex items-center gap-3 text-sm font-medium hover:opacity-70 transition-opacity"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">{novel.title}</span>
+            <span className="hidden sm:inline font-bold truncate max-w-[200px]">{novel.title}</span>
           </Link>
           <div className="text-sm font-bold opacity-70">Capítulo {chapterNum}</div>
-          <div className="w-20" /> {/* Spacer for centering */}
+          <div className="w-20 flex justify-end"></div>
         </div>
       </header>
 
-      {/* Floating Sidebar */}
       <div className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-40">
         <Popover>
           <PopoverTrigger asChild>
@@ -101,39 +155,79 @@ export default function Reader() {
           </PopoverTrigger>
           <PopoverContent
             side="left"
-            className="w-72 bg-zinc-950 border-zinc-800 p-6 rounded-2xl mr-4"
+            className="w-72 bg-zinc-950 border-zinc-800 p-6 rounded-2xl mr-4 shadow-2xl"
           >
             <div className="space-y-6">
-              <div>
-                <h4 className="text-sm font-medium text-zinc-400 mb-3">Tamanho da Fonte</h4>
-                <Slider
-                  value={[settings.fontSize]}
-                  min={14}
-                  max={26}
-                  step={1}
-                  onValueChange={([v]) => setSettings((s) => ({ ...s, fontSize: v }))}
-                  className="py-4"
-                />
-                <div className="flex justify-between text-xs text-zinc-600 font-serif">
-                  <span>A</span>
-                  <span className="text-lg">A</span>
-                </div>
-              </div>
               <div>
                 <h4 className="text-sm font-medium text-zinc-400 mb-3">Tema</h4>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setSettings((s) => ({ ...s, theme: 'dark' }))}
-                    className="flex-1 h-10 rounded-lg bg-black border-2 border-zinc-800 focus:border-lime-400"
+                    className={cn(
+                      'flex-1 h-10 rounded-lg bg-black border-2',
+                      settings.theme === 'dark' ? 'border-lime-400' : 'border-zinc-800',
+                    )}
                   />
                   <button
                     onClick={() => setSettings((s) => ({ ...s, theme: 'sepia' }))}
-                    className="flex-1 h-10 rounded-lg bg-[#1e1c18] border-2 border-zinc-800 focus:border-lime-400"
+                    className={cn(
+                      'flex-1 h-10 rounded-lg bg-[#f4ecd8] border-2',
+                      settings.theme === 'sepia' ? 'border-lime-400' : 'border-zinc-800',
+                    )}
                   />
                   <button
                     onClick={() => setSettings((s) => ({ ...s, theme: 'light' }))}
-                    className="flex-1 h-10 rounded-lg bg-zinc-50 border-2 border-zinc-300 focus:border-lime-400"
+                    className={cn(
+                      'flex-1 h-10 rounded-lg bg-white border-2',
+                      settings.theme === 'light' ? 'border-lime-400' : 'border-zinc-800',
+                    )}
                   />
+                </div>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-zinc-400 mb-3">Tamanho da Fonte</h4>
+                <div className="flex gap-2">
+                  {['S', 'M', 'L', 'XL'].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setSettings((p) => ({ ...p, fontSize: s }))}
+                      className={cn(
+                        'flex-1 h-10 rounded-lg border font-medium transition-colors',
+                        settings.fontSize === s
+                          ? 'border-lime-400 bg-lime-400/10 text-lime-400'
+                          : 'border-zinc-800 text-zinc-400 hover:bg-zinc-900',
+                      )}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-zinc-400 mb-3">Espaçamento</h4>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setSettings((p) => ({ ...p, spacing: 'normal' }))}
+                    className={cn(
+                      'flex-1 h-10 rounded-lg border font-medium transition-colors',
+                      settings.spacing === 'normal'
+                        ? 'border-lime-400 bg-lime-400/10 text-lime-400'
+                        : 'border-zinc-800 text-zinc-400 hover:bg-zinc-900',
+                    )}
+                  >
+                    Normal
+                  </button>
+                  <button
+                    onClick={() => setSettings((p) => ({ ...p, spacing: 'amplo' }))}
+                    className={cn(
+                      'flex-1 h-10 rounded-lg border font-medium transition-colors',
+                      settings.spacing === 'amplo'
+                        ? 'border-lime-400 bg-lime-400/10 text-lime-400'
+                        : 'border-zinc-800 text-zinc-400 hover:bg-zinc-900',
+                    )}
+                  >
+                    Amplo
+                  </button>
                 </div>
               </div>
             </div>
@@ -148,48 +242,44 @@ export default function Reader() {
         </button>
         <button className="w-12 h-12 rounded-full bg-zinc-900/80 border border-zinc-800 text-zinc-400 hover:text-white hover:border-lime-400 flex items-center justify-center backdrop-blur-sm transition-all shadow-xl relative">
           <MessageCircle className="w-5 h-5" />
-          <span className="absolute -top-1 -right-1 bg-lime-400 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-            12
-          </span>
         </button>
       </div>
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 md:px-8 max-w-3xl mt-12 mb-20">
-        <h1
-          className="text-3xl md:text-4xl font-bold mb-12 text-center"
-          style={{ color: settings.theme === 'light' ? '#000' : '#fff' }}
-        >
+        <h1 className="text-3xl md:text-4xl font-bold mb-12 text-center font-sans tracking-tight">
           {chapter.title}
         </h1>
 
         <div
-          className="text-reader whitespace-pre-wrap"
-          style={{ fontSize: `${settings.fontSize}px` }}
+          className="font-serif whitespace-pre-wrap transition-all duration-300"
+          style={{
+            fontSize: `${fontSizeMap[settings.fontSize]}px`,
+            lineHeight: spacingMap[settings.spacing],
+          }}
         >
           {chapter.content}
-
-          {/* Mock extra content for scrolling */}
-          {
-            '\n\nEle não podia acreditar no que via. A imensidão do abismo à sua frente parecia devorar a própria luz. As lendas antigas falavam desse lugar, mas nada poderia prepará-lo para a realidade aterradora que agora enfrentava.\n\nSua espada tremia levemente, não por medo, mas pela ressonância da energia densa que emanava das profundezas. Ele apertou o cabo, firmando sua determinação. Não havia volta. O destino de seu clã, de sua família, dependia do que ele encontraria ali embaixo.\n\nCom um suspiro profundo, ele deu o primeiro passo no vazio.'
-          }
         </div>
       </main>
 
-      {/* Footer Nav */}
       <div className="container mx-auto px-4 max-w-3xl flex justify-between gap-4">
         <button
           onClick={() => navigate(`/novel/${novel.id}/chapter/${chapterNum - 1}`)}
-          disabled={chapterNum === 1}
-          className="flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-zinc-900/50 hover:bg-zinc-800 border border-zinc-800 text-white"
+          disabled={chapterNum <= 1}
+          className={cn(
+            'flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-bold transition-all border',
+            settings.theme === 'light'
+              ? 'bg-white hover:bg-zinc-100 border-zinc-300 text-black'
+              : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-800 text-white',
+            'disabled:opacity-50 disabled:cursor-not-allowed',
+          )}
         >
           <ChevronLeft className="w-5 h-5" />
           Anterior
         </button>
         <button
           onClick={() => navigate(`/novel/${novel.id}/chapter/${chapterNum + 1}`)}
-          disabled={chapterNum === novel.chapters.length}
-          className="flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-lime-400 hover:bg-lime-500 text-black shadow-lg shadow-lime-900/20"
+          disabled={chapterNum >= totalChapters}
+          className="flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-bold transition-all bg-lime-400 hover:bg-lime-500 text-black shadow-lg shadow-lime-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Próximo
           <ChevronRight className="w-5 h-5" />

@@ -5,7 +5,7 @@ import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/hooks/use-auth'
 import {
   Settings,
-  List,
+  AlignJustify,
   Bookmark,
   MessageCircle,
   ChevronLeft,
@@ -19,6 +19,7 @@ import {
   Check,
   X,
   Gift,
+  Search,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ChapterComments } from '@/components/ChapterComments'
@@ -214,7 +215,7 @@ export default function Reader() {
 
   const sidebarBtnClass = (isActive: boolean) =>
     cn(
-      'w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-200',
+      'w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-200',
       isActive ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:bg-zinc-800 hover:text-white',
     )
 
@@ -281,16 +282,36 @@ export default function Reader() {
             : 'opacity-0 pointer-events-none',
         )}
       >
-        <div className="container mx-auto pl-4 pr-[64px] md:pr-[64px] h-16 flex items-center justify-between max-w-4xl">
-          <Link
-            to={`/novel/${novel.id}`}
-            className="flex items-center gap-3 text-sm font-medium hover:opacity-70 transition-opacity"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline font-bold truncate max-w-[200px]">{novel.title}</span>
-          </Link>
-          <div className="text-sm font-bold opacity-70">Capítulo {chapterNum}</div>
-          <div className="flex justify-end items-center">
+        <div className="h-[48px] px-4 flex items-center justify-between w-full pr-[64px] max-w-4xl mx-auto">
+          {/* Left Zone */}
+          <div className="flex items-center">
+            <Link
+              to={`/novel/${novel.id}`}
+              className="flex items-center hover:opacity-70 transition-opacity text-inherit"
+            >
+              <ChevronLeft className="w-5 h-5 mr-1" />
+              <span className="text-sm font-medium truncate max-w-[200px] hidden sm:inline-block">
+                {novel.title}
+              </span>
+            </Link>
+            <div
+              className={cn(
+                'border-r h-4 mx-3 hidden sm:block',
+                settings.theme === 'dark' ? 'border-zinc-700' : 'border-zinc-300',
+              )}
+            ></div>
+            <span className="text-sm text-zinc-500 truncate max-w-[200px] hidden sm:inline-block">
+              {chapter.title}
+            </span>
+          </div>
+
+          {/* Center Zone */}
+          <div className="absolute left-1/2 -translate-x-1/2 text-xs text-zinc-400 font-medium">
+            {Math.round(progress)}%
+          </div>
+
+          {/* Right Zone */}
+          <div className="flex items-center gap-3">
             <Button
               onClick={() => {
                 if (!user) {
@@ -300,7 +321,7 @@ export default function Reader() {
                 voteNovel(novel.id)
               }}
               className={cn(
-                'transition-colors rounded-xl px-4 py-2 h-9 font-semibold border',
+                'transition-colors rounded-xl px-3 py-1 h-7 font-semibold border text-xs',
                 settings.theme === 'dark'
                   ? 'bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700'
                   : settings.theme === 'sepia'
@@ -309,9 +330,25 @@ export default function Reader() {
                 hasVoted ? 'opacity-50' : '',
               )}
             >
-              <Zap className={cn('w-4 h-4 mr-1.5', hasVoted ? 'fill-current' : '')} />
+              <Zap className={cn('w-3 h-3 mr-1.5', hasVoted ? 'fill-current' : '')} />
               Votar
             </Button>
+            <div
+              className={cn(
+                'border-r h-4',
+                settings.theme === 'dark' ? 'border-zinc-700' : 'border-zinc-300',
+              )}
+            ></div>
+            <button
+              className={cn(
+                'transition-colors cursor-pointer',
+                settings.theme === 'dark'
+                  ? 'text-zinc-400 hover:text-white'
+                  : 'text-zinc-400 hover:text-zinc-700',
+              )}
+            >
+              <Search className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </header>
@@ -322,22 +359,26 @@ export default function Reader() {
           onClick={() => toggleDrawer('settings')}
           className={sidebarBtnClass(activeDrawer === 'settings')}
         >
-          <Settings className="w-5 h-5" />
+          <Settings className="w-[18px] h-[18px]" strokeWidth={1.5} />
         </button>
         <button
           onClick={() => toggleDrawer('list')}
           className={sidebarBtnClass(activeDrawer === 'list')}
         >
-          <List className="w-5 h-5" />
+          <AlignJustify className="w-[18px] h-[18px]" strokeWidth={1.5} />
         </button>
         <button onClick={handleBookmark} className={sidebarBtnClass(isBookmarked)}>
-          {isBookmarked ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
+          {isBookmarked ? (
+            <BookmarkCheck className="w-[18px] h-[18px]" strokeWidth={1.5} />
+          ) : (
+            <Bookmark className="w-[18px] h-[18px]" strokeWidth={1.5} />
+          )}
         </button>
         <button
           onClick={() => toggleDrawer('comments')}
           className={sidebarBtnClass(activeDrawer === 'comments')}
         >
-          <MessageCircle className="w-5 h-5" />
+          <MessageCircle className="w-[18px] h-[18px]" strokeWidth={1.5} />
         </button>
       </div>
 
@@ -350,118 +391,128 @@ export default function Reader() {
       >
         {/* Settings Drawer */}
         {activeDrawer === 'settings' && (
-          <div className="w-[280px] border-l p-6 flex flex-col gap-8 h-full overflow-y-auto bg-zinc-900 border-zinc-800">
-            <h3 className="font-bold text-white mb-2">Configurações</h3>
+          <div className="w-[320px] border-l flex flex-col h-full bg-zinc-900 border-zinc-800">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-800 px-6 pt-6 shrink-0">
+              <h3 className="text-sm font-semibold text-white">Configurações</h3>
+              <button
+                onClick={() => setActiveDrawer(null)}
+                className="text-zinc-400 hover:text-zinc-700 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-            <div>
-              <h4 className="text-sm text-zinc-400 mb-3">Fundo</h4>
-              <div className="flex gap-4">
-                <button
-                  onClick={() => updateSetting('theme', 'dark')}
-                  className={cn(
-                    'w-10 h-10 rounded-full bg-black border-2 border-zinc-600 outline-none transition-all',
-                    settings.theme === 'dark' ? 'ring-2 ring-white' : '',
-                  )}
+            <div className="px-6 pb-6 overflow-y-auto flex flex-col gap-8">
+              <div>
+                <h4 className="text-sm text-zinc-400 mb-3">Fundo</h4>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => updateSetting('theme', 'dark')}
+                    className={cn(
+                      'w-10 h-10 rounded-full bg-black border-2 border-zinc-600 outline-none transition-all',
+                      settings.theme === 'dark' ? 'ring-2 ring-white' : '',
+                    )}
+                  />
+                  <button
+                    onClick={() => updateSetting('theme', 'sepia')}
+                    className={cn(
+                      'w-10 h-10 rounded-full bg-[#F2E8D9] border-2 border-[#C8B89A] outline-none transition-all',
+                      settings.theme === 'sepia' ? 'ring-2 ring-[#3D2B1F]' : '',
+                    )}
+                  />
+                  <button
+                    onClick={() => updateSetting('theme', 'light')}
+                    className={cn(
+                      'w-10 h-10 rounded-full bg-white border-2 border-zinc-300 outline-none transition-all',
+                      settings.theme === 'light' ? 'ring-2 ring-zinc-900' : '',
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm text-zinc-400 mb-3">Fonte</h4>
+                <div className="flex bg-zinc-800 rounded-full p-1">
+                  <button
+                    onClick={() => updateSetting('fontFamily', 'sans')}
+                    className={cn(
+                      'flex-1 py-1.5 rounded-full text-sm font-sans transition-colors',
+                      settings.fontFamily === 'sans'
+                        ? 'bg-zinc-600 text-white'
+                        : 'text-zinc-400 hover:text-white',
+                    )}
+                  >
+                    Inter
+                  </button>
+                  <button
+                    onClick={() => updateSetting('fontFamily', 'serif')}
+                    className={cn(
+                      'flex-1 py-1.5 rounded-full text-sm font-serif transition-colors',
+                      settings.fontFamily === 'serif'
+                        ? 'bg-zinc-600 text-white'
+                        : 'text-zinc-400 hover:text-white',
+                    )}
+                  >
+                    Georgia
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm text-zinc-400 mb-3">Tamanho</h4>
+                <div className="flex items-center justify-between bg-zinc-800 rounded-full p-1">
+                  <button
+                    onClick={() => updateSetting('fontSize', Math.max(14, settings.fontSize - 1))}
+                    className="w-10 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+                  >
+                    A-
+                  </button>
+                  <span className="text-white font-medium">{settings.fontSize}</span>
+                  <button
+                    onClick={() => updateSetting('fontSize', Math.min(24, settings.fontSize + 1))}
+                    className="w-10 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+                  >
+                    A+
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm text-zinc-400 mb-3">Espaçamento</h4>
+                <div className="flex bg-zinc-800 rounded-full p-1">
+                  <button
+                    onClick={() => updateSetting('lineHeight', 'normal')}
+                    className={cn(
+                      'flex-1 py-1.5 rounded-full text-sm transition-colors',
+                      settings.lineHeight === 'normal'
+                        ? 'bg-zinc-600 text-white'
+                        : 'text-zinc-400 hover:text-white',
+                    )}
+                  >
+                    Normal
+                  </button>
+                  <button
+                    onClick={() => updateSetting('lineHeight', 'wide')}
+                    className={cn(
+                      'flex-1 py-1.5 rounded-full text-sm transition-colors',
+                      settings.lineHeight === 'wide'
+                        ? 'bg-zinc-600 text-white'
+                        : 'text-zinc-400 hover:text-white',
+                    )}
+                  >
+                    Amplo
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-zinc-800 mt-4 shrink-0">
+                <span className="text-sm text-zinc-300">Comentários de Parágrafo</span>
+                <Switch
+                  checked={settings.paragraphComments}
+                  onCheckedChange={(c) => updateSetting('paragraphComments', c)}
+                  className="data-[state=checked]:bg-zinc-500 data-[state=unchecked]:bg-zinc-700"
                 />
-                <button
-                  onClick={() => updateSetting('theme', 'sepia')}
-                  className={cn(
-                    'w-10 h-10 rounded-full bg-[#F2E8D9] border-2 border-[#C8B89A] outline-none transition-all',
-                    settings.theme === 'sepia' ? 'ring-2 ring-[#3D2B1F]' : '',
-                  )}
-                />
-                <button
-                  onClick={() => updateSetting('theme', 'light')}
-                  className={cn(
-                    'w-10 h-10 rounded-full bg-white border-2 border-zinc-300 outline-none transition-all',
-                    settings.theme === 'light' ? 'ring-2 ring-zinc-900' : '',
-                  )}
-                />
               </div>
-            </div>
-
-            <div>
-              <h4 className="text-sm text-zinc-400 mb-3">Fonte</h4>
-              <div className="flex bg-zinc-800 rounded-full p-1">
-                <button
-                  onClick={() => updateSetting('fontFamily', 'sans')}
-                  className={cn(
-                    'flex-1 py-1.5 rounded-full text-sm font-sans transition-colors',
-                    settings.fontFamily === 'sans'
-                      ? 'bg-zinc-600 text-white'
-                      : 'text-zinc-400 hover:text-white',
-                  )}
-                >
-                  Inter
-                </button>
-                <button
-                  onClick={() => updateSetting('fontFamily', 'serif')}
-                  className={cn(
-                    'flex-1 py-1.5 rounded-full text-sm font-serif transition-colors',
-                    settings.fontFamily === 'serif'
-                      ? 'bg-zinc-600 text-white'
-                      : 'text-zinc-400 hover:text-white',
-                  )}
-                >
-                  Georgia
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="text-sm text-zinc-400 mb-3">Tamanho</h4>
-              <div className="flex items-center justify-between bg-zinc-800 rounded-full p-1">
-                <button
-                  onClick={() => updateSetting('fontSize', Math.max(14, settings.fontSize - 1))}
-                  className="w-10 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
-                >
-                  A-
-                </button>
-                <span className="text-white font-medium">{settings.fontSize}</span>
-                <button
-                  onClick={() => updateSetting('fontSize', Math.min(24, settings.fontSize + 1))}
-                  className="w-10 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
-                >
-                  A+
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="text-sm text-zinc-400 mb-3">Espaçamento</h4>
-              <div className="flex bg-zinc-800 rounded-full p-1">
-                <button
-                  onClick={() => updateSetting('lineHeight', 'normal')}
-                  className={cn(
-                    'flex-1 py-1.5 rounded-full text-sm transition-colors',
-                    settings.lineHeight === 'normal'
-                      ? 'bg-zinc-600 text-white'
-                      : 'text-zinc-400 hover:text-white',
-                  )}
-                >
-                  Normal
-                </button>
-                <button
-                  onClick={() => updateSetting('lineHeight', 'wide')}
-                  className={cn(
-                    'flex-1 py-1.5 rounded-full text-sm transition-colors',
-                    settings.lineHeight === 'wide'
-                      ? 'bg-zinc-600 text-white'
-                      : 'text-zinc-400 hover:text-white',
-                  )}
-                >
-                  Amplo
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between mt-auto pt-4 border-t border-zinc-800">
-              <span className="text-sm text-zinc-300">Comentários de Parágrafo</span>
-              <Switch
-                checked={settings.paragraphComments}
-                onCheckedChange={(c) => updateSetting('paragraphComments', c)}
-                className="data-[state=checked]:bg-zinc-500 data-[state=unchecked]:bg-zinc-700"
-              />
             </div>
           </div>
         )}
@@ -469,16 +520,16 @@ export default function Reader() {
         {/* List Drawer */}
         {activeDrawer === 'list' && (
           <div className="w-[320px] flex flex-col h-full border-l shadow-2xl bg-zinc-900 border-zinc-800">
-            <div className="p-4 flex items-center justify-between border-b border-zinc-800">
-              <h3 className="font-bold text-white truncate pr-4">{novel?.title}</h3>
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-800 px-6 pt-6 shrink-0">
+              <h3 className="text-sm font-semibold text-white">Capítulos</h3>
               <button
                 onClick={() => setActiveDrawer(null)}
-                className="text-zinc-400 hover:text-white shrink-0"
+                className="text-zinc-400 hover:text-zinc-700 cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-4 border-b border-zinc-800 bg-zinc-900/50">
+            <div className="px-6 pb-6 border-b border-zinc-800 bg-zinc-900/50 shrink-0">
               <div className="flex justify-between text-sm mb-2 text-zinc-400">
                 <span>Progresso</span>
                 <span>
@@ -490,7 +541,7 @@ export default function Reader() {
                 className="h-2 bg-zinc-800 [&>div]:bg-white"
               />
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto py-2">
               {chaptersList.map((ch) => (
                 <button
                   key={ch.id}
@@ -527,7 +578,6 @@ export default function Reader() {
           <ChapterComments
             chapterId={chapter.id}
             novelAuthorId={novel.author}
-            theme="dark"
             onClose={() => setActiveDrawer(null)}
           />
         )}

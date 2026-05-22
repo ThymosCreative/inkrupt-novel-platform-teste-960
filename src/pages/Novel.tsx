@@ -10,6 +10,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AuthModal } from '@/components/AuthModal'
 import { useRealtime } from '@/hooks/use-realtime'
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
+import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -41,13 +49,20 @@ export default function Novel() {
   const [loading, setLoading] = useState(true)
   const [libraryEntry, setLibraryEntry] = useState<any>(null)
   const [isAuthOpen, setIsAuthOpen] = useState(false)
+  const [isReviewOpen, setIsReviewOpen] = useState(false)
+  const [reviewContent, setReviewContent] = useState('')
+  const [reviewRating, setReviewRating] = useState(0)
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
 
   const loadLibraryEntry = async (novelId: string) => {
     if (!user) return
     try {
       const entries = await pb
         .collection('library_entries')
-        .getFullList({ filter: `user = "${user.id}" && novel = "${novelId}"` })
+        .getFullList({
+          filter: `user = "${user.id}" && novel = "${novelId}"`,
+          expand: 'last_chapter',
+        })
       if (entries.length > 0) setLibraryEntry(entries[0])
       else setLibraryEntry(null)
     } catch {
@@ -79,11 +94,21 @@ export default function Novel() {
         if (e.action === 'delete') {
           setLibraryEntry(null)
         } else {
-          setLibraryEntry(e.record)
+          loadLibraryEntry(novel.id)
         }
       }
     },
     !!user && !!novel,
+  )
+
+  useRealtime(
+    'reviews',
+    (e) => {
+      if (novel && e.record.novel === novel.id) {
+        getReviews(novel.id).then(setReviews).catch(console.error)
+      }
+    },
+    !!novel,
   )
 
   const handleUpdateLibrary = async (status: string) => {
@@ -121,6 +146,69 @@ export default function Novel() {
       }
     }
   }
+
+  const userReview = reviews.find((r) => r.user === user?.id)
+
+  const handleOpenReview = () => {
+    if (!user) {
+      setIsAuthOpen(true)
+      return
+    }
+    if (userReview) {
+      setReviewContent(userReview.content || '')
+      setReviewRating(userReview.rating || 0)
+    } else {
+      setReviewContent('')
+      setReviewRating(0)
+    }
+    setIsReviewOpen(true)
+  }
+
+  const handleSubmitReview = async () => {
+    if (reviewRating < 1 || reviewRating > 5) {
+      toast.error('Por favor, selecione uma nota de 1 a 5.')
+      return
+    }
+    setIsSubmittingReview(true)
+    try {
+      if (userReview) {
+        await pb.collection('reviews').update(userReview.id, {
+          rating: reviewRating,
+          content: reviewContent,
+        })
+        toast.success('Review atualizada com sucesso!')
+      } else {
+        await pb.collection('reviews').create({
+          novel: novel.id,
+          user: user.id,
+          rating: reviewRating,
+          content: reviewContent,
+        })
+        toast.success('Review enviada com sucesso!')
+      }
+      setIsReviewOpen(false)
+    } catch (e) {
+      toast.error('Erro ao enviar review.')
+    } finally {
+      setIsSubmittingReview(false)
+    }
+  }
+
+  const handleDeleteReview = async () => {
+    if (!userReview) return
+    try {
+      await pb.collection('reviews').delete(userReview.id)
+      toast.success('Review removida.')
+      setIsReviewOpen(false)
+    } catch (e) {
+      toast.error('Erro ao remover review.')
+    }
+  }
+
+  const avgRating =
+    reviews.length > 0
+      ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
+      : novel.rating || 0
 
   if (loading) {
     return (
@@ -193,8 +281,8 @@ export default function Novel() {
               <div className="flex flex-col items-center md:items-start">
                 <span className="text-zinc-500 text-xs uppercase font-bold">Avaliação</span>
                 <span className="flex items-center gap-1.5 font-semibold text-white mt-1">
-                  <Star className="w-4 h-4 text-lime-400 fill-lime-400" />{' '}
-                  {novel.rating?.toFixed(1) || 'N/A'}
+                  <Star className="w-4 h-4 text-lime-400 fill-lime-400" /> {avgRating.toFixed(1)}{' '}
+                  <span className="text-zinc-500 font-normal text-xs ml-1">({reviews.length})</span>
                 </span>
               </div>
               <div className="w-px h-8 bg-zinc-800 hidden md:block" />
@@ -208,9 +296,15 @@ export default function Novel() {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
               {chapters.length > 0 ? (
-                <Link to={`/novel/${novel.id}/chapter/1`}>
+                <Link
+                  to={
+                    libraryEntry?.expand?.last_chapter
+                      ? `/novel/${novel.id}/chapter/${libraryEntry.expand.last_chapter.chapter_number}`
+                      : `/novel/${novel.id}/chapter/1`
+                  }
+                >
                   <Button className="w-full sm:w-auto bg-lime-400 text-black hover:bg-lime-500 font-bold px-8 h-12 rounded-xl text-base">
-                    Ler Agora
+                    {libraryEntry?.expand?.last_chapter ? 'Continuar Lendo' : 'Ler Agora'}
                   </Button>
                 </Link>
               ) : (
@@ -386,9 +480,12 @@ export default function Novel() {
                   <div className="w-1 h-5 bg-lime-400 rounded-full" />
                   Comunidade
                 </h3>
-                <Button className="bg-zinc-900 text-white hover:bg-zinc-800 border border-zinc-800">
+                <Button
+                  onClick={handleOpenReview}
+                  className="bg-zinc-900 text-white hover:bg-zinc-800 border border-zinc-800"
+                >
                   <MessageSquare className="w-4 h-4 mr-2" />
-                  Escrever Review
+                  {userReview ? 'Editar Review' : 'Escrever Review'}
                 </Button>
               </div>
               <div className="space-y-4">
@@ -401,7 +498,11 @@ export default function Novel() {
                       <div className="flex items-center gap-3">
                         <Avatar className="w-10 h-10 border border-zinc-800">
                           <AvatarImage
-                            src={`https://img.usecurling.com/ppl/thumbnail?seed=${rev.user}`}
+                            src={
+                              rev.expand?.user?.avatar
+                                ? pb.files.getURL(rev.expand.user, rev.expand.user.avatar)
+                                : `https://img.usecurling.com/ppl/thumbnail?seed=${rev.user}`
+                            }
                           />
                           <AvatarFallback>
                             {rev.expand?.user?.name?.charAt(0).toUpperCase() || 'U'}
@@ -436,6 +537,74 @@ export default function Novel() {
         </div>
       </div>
       <AuthModal isOpen={isAuthOpen} onOpenChange={setIsAuthOpen} />
+
+      <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
+        <DialogContent className="bg-zinc-950 border-zinc-800 text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{userReview ? 'Editar Review' : 'Escrever Review'}</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-sm text-zinc-400">Sua nota</span>
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    className="focus:outline-none transition-transform hover:scale-110"
+                  >
+                    <Star
+                      className={`w-8 h-8 ${
+                        star <= reviewRating ? 'fill-lime-400 text-lime-400' : 'text-zinc-700'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm text-zinc-400">O que você achou da obra?</label>
+              <Textarea
+                placeholder="Escreva sua review aqui..."
+                value={reviewContent}
+                onChange={(e) => setReviewContent(e.target.value)}
+                className="min-h-[120px] bg-zinc-900 border-zinc-800 focus-visible:ring-lime-400 resize-none"
+              />
+            </div>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {userReview && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleDeleteReview}
+                className="w-full sm:w-auto border-red-900/50 text-red-400 hover:bg-red-900/20 hover:text-red-300"
+              >
+                Excluir
+              </Button>
+            )}
+            <div className="flex-1" />
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setIsReviewOpen(false)}
+              className="w-full sm:w-auto hover:bg-zinc-800 hover:text-white"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSubmitReview}
+              disabled={isSubmittingReview || reviewRating === 0}
+              className="w-full sm:w-auto bg-lime-400 text-black hover:bg-lime-500 font-bold"
+            >
+              {isSubmittingReview && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {userReview ? 'Salvar Alterações' : 'Enviar Review'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

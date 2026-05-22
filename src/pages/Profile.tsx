@@ -22,7 +22,18 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'sonner'
-import { Settings, LogOut, Loader2, BookOpen, List as ListIcon, Globe, Lock } from 'lucide-react'
+import {
+  Settings,
+  LogOut,
+  Loader2,
+  BookOpen,
+  List as ListIcon,
+  Globe,
+  Lock,
+  CheckCircle,
+} from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { AuthModal } from '@/components/AuthModal'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import pb from '@/lib/pocketbase/client'
@@ -41,6 +52,9 @@ export default function Profile() {
   const [newListDesc, setNewListDesc] = useState('')
   const [newListVis, setNewListVis] = useState('public')
   const [isCreatingList, setIsCreatingList] = useState(false)
+  const [isAuthOpen, setIsAuthOpen] = useState(false)
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [followRecordId, setFollowRecordId] = useState<string | null>(null)
 
   const isOwnProfile = !id || (user && id === user.id)
 
@@ -83,7 +97,7 @@ export default function Profile() {
         const u = await pb.collection('users').getOne(targetId)
         setProfileUser(u)
 
-        const [libRes, novelsRes, listsRes] = await Promise.all([
+        const [libRes, novelsRes, listsRes, followRes] = await Promise.all([
           pb
             .collection('library_entries')
             .getFullList({ filter: `user = "${targetId}"`, expand: 'novel,last_chapter' }),
@@ -92,11 +106,22 @@ export default function Profile() {
             filter: `user = "${targetId}"${id && id !== user?.id ? ' && visibility = "public"' : ''}`,
             sort: '-created',
           }),
+          !isOwnProfile && user
+            ? pb
+                .collection('author_follows')
+                .getList(1, 1, { filter: `follower="${user.id}" && author="${targetId}"` })
+                .catch(() => null)
+            : Promise.resolve(null),
         ])
 
         setLibrary(libRes)
         setAuthoredNovels(novelsRes)
         setReadingLists(listsRes)
+
+        if (followRes && followRes.items.length > 0) {
+          setIsFollowing(true)
+          setFollowRecordId(followRes.items[0].id)
+        }
       } catch (e) {
         console.error(e)
       } finally {
@@ -110,6 +135,31 @@ export default function Profile() {
   const handleSignOut = () => {
     signOut()
     navigate('/')
+  }
+
+  const handleFollowToggle = async () => {
+    if (!user) {
+      setIsAuthOpen(true)
+      return
+    }
+    if (isOwnProfile || !profileUser) return
+    try {
+      if (isFollowing && followRecordId) {
+        await pb.collection('author_follows').delete(followRecordId)
+        setIsFollowing(false)
+        setFollowRecordId(null)
+        toast.success('Deixou de seguir.')
+      } else {
+        const res = await pb
+          .collection('author_follows')
+          .create({ follower: user.id, author: profileUser.id })
+        setIsFollowing(true)
+        setFollowRecordId(res.id)
+        toast.success('Seguindo autor!')
+      }
+    } catch (e) {
+      toast.error('Erro ao seguir autor')
+    }
   }
 
   if (loading) {
@@ -157,9 +207,23 @@ export default function Profile() {
               <h1 className="text-3xl font-bold text-foreground">
                 {profileUser?.name || profileUser?.email?.split('@')[0] || 'Usuário'}
               </h1>
+              {profileUser?.is_author && (
+                <Badge variant="outline" className="text-lime-400 border-lime-400 bg-lime-400/10">
+                  <CheckCircle className="w-4 h-4 mr-1" /> Autor Verificado
+                </Badge>
+              )}
             </div>
             {profileUser.bio && (
               <p className="text-muted-foreground text-sm max-w-2xl mt-2">{profileUser.bio}</p>
+            )}
+            {!isOwnProfile && profileUser?.is_author && (
+              <Button
+                onClick={handleFollowToggle}
+                variant={isFollowing ? 'outline' : 'default'}
+                className={`mt-4 ${!isFollowing ? 'bg-lime-400 text-black hover:bg-lime-500 font-bold' : 'border-lime-400 text-lime-400 hover:bg-lime-400/10'}`}
+              >
+                {isFollowing ? 'Seguindo' : 'Seguir Autor'}
+              </Button>
             )}
           </div>
           {isOwnProfile && (
@@ -381,6 +445,7 @@ export default function Profile() {
           </TabsContent>
         </Tabs>
       </div>
+      <AuthModal isOpen={isAuthOpen} onOpenChange={setIsAuthOpen} />
     </div>
   )
 }

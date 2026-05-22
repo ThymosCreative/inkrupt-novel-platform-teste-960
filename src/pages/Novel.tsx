@@ -1,6 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getNovel, getChapters, getReviews, formatNumber, getCoverUrl } from '@/services/api'
+import {
+  getNovel,
+  getChapters,
+  getReviews,
+  formatNumber,
+  getCoverUrl,
+  getNovelDiscussions,
+  createNovelDiscussion,
+  deleteNovelDiscussion,
+  checkIsFollowing,
+  followAuthor,
+  unfollowAuthor,
+} from '@/services/api'
 import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { toast } from 'sonner'
@@ -57,6 +69,11 @@ export default function Novel() {
   const [reviewRating, setReviewRating] = useState(0)
   const [isSubmittingReview, setIsSubmittingReview] = useState(false)
   const [reviewErrors, setReviewErrors] = useState<{ rating?: string; content?: string }>({})
+  const [discussions, setDiscussions] = useState<any[]>([])
+  const [discussionContent, setDiscussionContent] = useState('')
+  const [isPostingDiscussion, setIsPostingDiscussion] = useState(false)
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [followRecordId, setFollowRecordId] = useState<string | null>(null)
 
   const loadLibraryEntry = async (novelId: string) => {
     if (!user) return
@@ -74,12 +91,25 @@ export default function Novel() {
 
   useEffect(() => {
     if (id) {
-      Promise.all([getNovel(id), getChapters(id), getReviews(id)])
-        .then(async ([n, c, r]) => {
+      Promise.all([getNovel(id), getChapters(id), getReviews(id), getNovelDiscussions(id)])
+        .then(async ([n, c, r, d]) => {
           await loadLibraryEntry(n.id)
           setNovel(n)
           setChapters(c)
           setReviews(r)
+          setDiscussions(d)
+
+          if (user && n.expand?.author) {
+            const followRes = await checkIsFollowing(user.id, n.expand.author.id)
+            if (followRes) {
+              setIsFollowing(true)
+              setFollowRecordId(followRes.id)
+            } else {
+              setIsFollowing(false)
+              setFollowRecordId(null)
+            }
+          }
+
           setLoading(false)
         })
         .catch((e) => {
@@ -113,6 +143,16 @@ export default function Novel() {
     !!novel,
   )
 
+  useRealtime(
+    'novel_discussions',
+    (e) => {
+      if (novel && e.record.novel === novel.id) {
+        getNovelDiscussions(novel.id).then(setDiscussions).catch(console.error)
+      }
+    },
+    !!novel,
+  )
+
   const handleUpdateLibrary = async (status: string) => {
     if (!user) {
       setIsAuthOpen(true)
@@ -134,6 +174,53 @@ export default function Novel() {
       }
     } catch (e) {
       toast.error('Erro ao atualizar a biblioteca.')
+    }
+  }
+
+  const handleFollowToggle = async () => {
+    if (!user) {
+      setIsAuthOpen(true)
+      return
+    }
+    if (!novel?.expand?.author) return
+
+    try {
+      if (isFollowing && followRecordId) {
+        await unfollowAuthor(followRecordId)
+        setIsFollowing(false)
+        setFollowRecordId(null)
+        toast.success('Deixou de seguir o autor.')
+      } else {
+        const res = await followAuthor(user.id, novel.expand.author.id)
+        setIsFollowing(true)
+        setFollowRecordId(res.id)
+        toast.success('Seguindo o autor!')
+      }
+    } catch (e) {
+      toast.error('Erro ao seguir autor.')
+    }
+  }
+
+  const handlePostDiscussion = async () => {
+    if (!discussionContent.trim() || !user || !novel) return
+    setIsPostingDiscussion(true)
+    try {
+      await createNovelDiscussion(novel.id, discussionContent, user.id)
+      setDiscussionContent('')
+      toast.success('Comentário postado!')
+    } catch (e) {
+      toast.error('Erro ao postar comentário.')
+    } finally {
+      setIsPostingDiscussion(false)
+    }
+  }
+
+  const handleDeleteDiscussion = async (discussionId: string) => {
+    try {
+      await deleteNovelDiscussion(discussionId)
+      toast.success('Comentário removido.')
+    } catch (e) {
+      toast.error('Erro ao remover comentário.')
     }
   }
 
@@ -277,9 +364,33 @@ export default function Novel() {
             </div>
 
             <h1 className="text-3xl md:text-5xl font-bold text-white mb-2">{novel.title}</h1>
-            <p className="text-lg text-lime-400 font-medium mb-6">
-              {novel.expand?.author?.name || novel.expand?.author?.email || 'Autor Desconhecido'}
-            </p>
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-3 mb-6">
+              <div className="flex items-center gap-2">
+                <p className="text-lg text-lime-400 font-medium">
+                  {novel.expand?.author?.name ||
+                    novel.expand?.author?.email ||
+                    'Autor Desconhecido'}
+                </p>
+                {novel.expand?.author?.is_author && (
+                  <Badge
+                    variant="outline"
+                    className="text-lime-400 border-lime-400 bg-lime-400/10 text-xs"
+                  >
+                    <CheckCircle className="w-3 h-3 mr-1" /> Verificado
+                  </Badge>
+                )}
+              </div>
+              {novel.expand?.author && user?.id !== novel.expand.author.id && (
+                <Button
+                  onClick={handleFollowToggle}
+                  variant={isFollowing ? 'outline' : 'default'}
+                  size="sm"
+                  className={`h-7 px-3 rounded-full text-xs ${!isFollowing ? 'bg-lime-400 text-black hover:bg-lime-500 font-bold' : 'border-lime-400 text-lime-400 hover:bg-lime-400/10'}`}
+                >
+                  {isFollowing ? 'Seguindo' : 'Seguir'}
+                </Button>
+              )}
+            </div>
 
             <div className="flex flex-wrap justify-center md:justify-start items-center gap-6 text-sm text-zinc-300 mb-8">
               <div className="flex flex-col items-center md:items-start">
@@ -423,6 +534,12 @@ export default function Novel() {
               >
                 Reviews ({reviews.length})
               </TabsTrigger>
+              <TabsTrigger
+                value="discussions"
+                className="flex-1 sm:w-32 rounded-lg data-[state=active]:bg-zinc-800 data-[state=active]:text-lime-400"
+              >
+                Discussões ({discussions.length})
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent
@@ -496,6 +613,116 @@ export default function Novel() {
                     </div>
                   )}
                 </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent
+              value="discussions"
+              className="animate-in fade-in slide-in-from-bottom-4 space-y-6"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-bold flex items-center gap-2 text-white">
+                  <div className="w-1 h-5 bg-lime-400 rounded-full" />
+                  Discussão da Novel
+                </h3>
+              </div>
+
+              {user ? (
+                <div className="mb-6 bg-zinc-950/50 p-4 rounded-2xl border border-zinc-900">
+                  <Textarea
+                    value={discussionContent}
+                    onChange={(e) => setDiscussionContent(e.target.value)}
+                    placeholder="Escreva algo sobre a novel..."
+                    className="bg-zinc-900 border-zinc-800 text-white mb-4 resize-none focus-visible:ring-lime-400"
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={handlePostDiscussion}
+                      disabled={isPostingDiscussion || !discussionContent.trim()}
+                      className="bg-lime-400 text-black hover:bg-lime-500 font-bold"
+                    >
+                      {isPostingDiscussion && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      Postar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mb-6 bg-zinc-950/50 p-6 rounded-2xl border border-zinc-900 text-center text-zinc-400">
+                  Faça{' '}
+                  <button
+                    onClick={() => setIsAuthOpen(true)}
+                    className="text-lime-400 hover:underline font-bold"
+                  >
+                    login
+                  </button>{' '}
+                  para participar da discussão.
+                </div>
+              )}
+
+              <div className="space-y-4">
+                {discussions.map((disc) => (
+                  <div
+                    key={disc.id}
+                    className="bg-zinc-950/50 p-6 rounded-2xl border border-zinc-900"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-10 h-10 border border-zinc-800">
+                          <AvatarImage
+                            src={
+                              disc.expand?.user?.avatar
+                                ? pb.files.getURL(disc.expand.user, disc.expand.user.avatar)
+                                : `https://img.usecurling.com/ppl/thumbnail?seed=${disc.user}`
+                            }
+                          />
+                          <AvatarFallback>
+                            {disc.expand?.user?.name?.charAt(0).toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-sm text-zinc-200">
+                              {disc.expand?.user?.name || disc.expand?.user?.email || 'Usuário'}
+                            </p>
+                            {disc.expand?.user?.is_author && (
+                              <Badge
+                                variant="outline"
+                                className="text-lime-400 border-lime-400 bg-lime-400/10 py-0 px-1 text-[10px] h-4"
+                              >
+                                <CheckCircle className="w-2 h-2 mr-1" /> Verificado
+                              </Badge>
+                            )}
+                          </div>
+                          <span className="text-xs text-zinc-500">
+                            {new Date(disc.created).toLocaleDateString()} às{' '}
+                            {new Date(disc.created).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                      {user?.id === disc.user && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteDiscussion(disc.id)}
+                          className="text-red-400 hover:text-red-300 hover:bg-red-400/10 h-8 px-2"
+                        >
+                          Excluir
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">
+                      {disc.content}
+                    </p>
+                  </div>
+                ))}
+                {discussions.length === 0 && (
+                  <div className="text-center text-zinc-500 py-8">
+                    Nenhuma discussão ainda. Seja o primeiro a comentar!
+                  </div>
+                )}
               </div>
             </TabsContent>
 

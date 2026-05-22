@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-22T00:40:38.473Z",
+  "generatedAt": "2026-05-22T00:51:46.018Z",
   "collections": [
     {
       "name": "users",
@@ -560,6 +560,100 @@
       "indexes": [
         "CREATE UNIQUE INDEX idx_reading_list_items_unique ON reading_list_items (reading_list, novel)",
         "CREATE INDEX idx_reading_list_items_list ON reading_list_items (reading_list)"
+      ]
+    },
+    {
+      "name": "novel_discussions",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && user = @request.auth.id",
+        "delete": "@request.auth.id != '' && user = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "user",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "novel",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "novels"
+        },
+        {
+          "name": "content",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_novel_discussions_novel_created ON novel_discussions (novel, created DESC)"
+      ]
+    },
+    {
+      "name": "author_follows",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && follower = @request.auth.id",
+        "update": "@request.auth.id != '' && follower = @request.auth.id",
+        "delete": "@request.auth.id != '' && follower = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "follower",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "author",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_author_follows_unique ON author_follows (follower, author)"
       ]
     }
   ]

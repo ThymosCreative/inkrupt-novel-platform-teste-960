@@ -111,3 +111,35 @@ export const getLibrary = async (userId: string) => {
     .collection('library_entries')
     .getFullList({ filter: `user = "${userId}"`, expand: 'novel,last_chapter', sort: '-updated' })
 }
+
+export const getNovelDiscussions = async (novelId: string) => {
+  return pb
+    .collection('novel_discussions')
+    .getFullList({ filter: `novel = "${novelId}"`, expand: 'user', sort: '-created' })
+}
+
+export const createNovelDiscussion = async (novelId: string, content: string, userId: string) => {
+  return pb.collection('novel_discussions').create({ novel: novelId, content, user: userId })
+}
+
+export const deleteNovelDiscussion = async (id: string) => {
+  return pb.collection('novel_discussions').delete(id)
+}
+
+export const checkIsFollowing = async (followerId: string, authorId: string) => {
+  try {
+    return await pb
+      .collection('author_follows')
+      .getFirstListItem(`follower="${followerId}" && author="${authorId}"`)
+  } catch (e) {
+    return null
+  }
+}
+
+export const followAuthor = async (followerId: string, authorId: string) => {
+  return pb.collection('author_follows').create({ follower: followerId, author: authorId })
+}
+
+export const unfollowAuthor = async (id: string) => {
+  return pb.collection('author_follows').delete(id)
+}

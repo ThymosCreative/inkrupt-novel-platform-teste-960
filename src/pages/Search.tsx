@@ -13,6 +13,25 @@ import {
 } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+
+const GENRES = [
+  'Ação',
+  'Aventura',
+  'Comédia',
+  'Drama',
+  'Fantasia',
+  'Ficção Científica',
+  'Mistério',
+  'Romance',
+  'Terror',
+  'Xianxia',
+  'Wuxia',
+]
+
+const STATUSES = ['Em Andamento', 'Concluído', 'Hiato']
+const TYPES = ['Original', 'Tradução']
 
 const getHistory = () => {
   try {
@@ -29,24 +48,34 @@ export default function Search() {
   const status = searchParams.get('status') || 'all'
   const type = searchParams.get('type') || 'all'
   const sort = searchParams.get('sort') || (query ? 'semantic' : '-reads')
+  const genresParam = searchParams.get('genres')
+  const selectedGenres = genresParam ? genresParam.split(',') : []
 
   const [results, setResults] = useState<any[]>([])
   const [popular, setPopular] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [history, setHistory] = useState<string[]>(getHistory())
 
-  const updateParams = (updates: Record<string, string>) => {
+  const updateParams = (updates: Record<string, string | null>) => {
     const newParams = new URLSearchParams(searchParams)
     Object.entries(updates).forEach(([k, v]) => {
-      if (v === 'all' || !v) newParams.delete(k)
+      if (v === 'all' || v === null || v === '') newParams.delete(k)
       else newParams.set(k, v)
     })
     setSearchParams(newParams)
   }
 
+  const toggleGenre = (genre: string) => {
+    const newGenres = selectedGenres.includes(genre)
+      ? selectedGenres.filter((g) => g !== genre)
+      : [...selectedGenres, genre]
+
+    updateParams({ genres: newGenres.length > 0 ? newGenres.join(',') : null })
+  }
+
   useEffect(() => {
     setLoading(true)
-    searchNovels({ query, status, type, sort, limit: 50 })
+    searchNovels({ query, status, type, genres: selectedGenres, sort, limit: 50 })
       .then((res) => setResults(res.items))
       .catch(console.error)
       .finally(() => setLoading(false))
@@ -58,48 +87,99 @@ export default function Search() {
     } else {
       setHistory(getHistory())
     }
-  }, [query, status, type, sort])
+  }, [query, status, type, genresParam, sort])
 
   const FiltersContent = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="font-bold mb-3 text-lg">Status</h3>
-        <div className="space-y-2">
-          {['all', 'Em Andamento', 'Concluído', 'Hiato'].map((s) => (
-            <label key={s} className="flex items-center gap-2 cursor-pointer group">
+        <h3 className="font-bold mb-3 text-lg text-white">Gêneros</h3>
+        <div className="space-y-3">
+          {GENRES.map((genre) => (
+            <div key={genre} className="flex items-center space-x-2">
+              <Checkbox
+                id={`genre-${genre}`}
+                checked={selectedGenres.includes(genre)}
+                onCheckedChange={() => toggleGenre(genre)}
+                className="border-zinc-700 data-[state=checked]:bg-lime-400 data-[state=checked]:text-black"
+              />
+              <Label
+                htmlFor={`genre-${genre}`}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-zinc-300 cursor-pointer hover:text-white transition-colors"
+              >
+                {genre}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="h-px bg-zinc-800" />
+
+      <div>
+        <h3 className="font-bold mb-3 text-lg text-white">Status</h3>
+        <div className="space-y-3">
+          {['all', ...STATUSES].map((s) => (
+            <div key={s} className="flex items-center space-x-2">
               <input
                 type="radio"
+                id={`status-${s}`}
                 name="status"
                 checked={status === s}
                 onChange={() => updateParams({ status: s })}
-                className="text-lime-400 focus:ring-lime-400 bg-zinc-900 border-zinc-700"
+                className="w-4 h-4 text-lime-400 focus:ring-lime-400 bg-zinc-900 border-zinc-700 focus:ring-offset-zinc-900 cursor-pointer"
               />
-              <span className="text-sm text-zinc-300 group-hover:text-white transition-colors">
+              <Label
+                htmlFor={`status-${s}`}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-zinc-300 cursor-pointer hover:text-white transition-colors"
+              >
                 {s === 'all' ? 'Todos' : s}
-              </span>
-            </label>
+              </Label>
+            </div>
           ))}
         </div>
       </div>
+
+      <div className="h-px bg-zinc-800" />
+
       <div>
-        <h3 className="font-bold mb-3 text-lg">Tipo</h3>
-        <div className="space-y-2">
-          {['all', 'Original', 'Tradução'].map((s) => (
-            <label key={s} className="flex items-center gap-2 cursor-pointer group">
+        <h3 className="font-bold mb-3 text-lg text-white">Tipo</h3>
+        <div className="space-y-3">
+          {['all', ...TYPES].map((s) => (
+            <div key={s} className="flex items-center space-x-2">
               <input
                 type="radio"
+                id={`type-${s}`}
                 name="type"
                 checked={type === s}
                 onChange={() => updateParams({ type: s })}
-                className="text-lime-400 focus:ring-lime-400 bg-zinc-900 border-zinc-700"
+                className="w-4 h-4 text-lime-400 focus:ring-lime-400 bg-zinc-900 border-zinc-700 focus:ring-offset-zinc-900 cursor-pointer"
               />
-              <span className="text-sm text-zinc-300 group-hover:text-white transition-colors">
+              <Label
+                htmlFor={`type-${s}`}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-zinc-300 cursor-pointer hover:text-white transition-colors"
+              >
                 {s === 'all' ? 'Todos' : s}
-              </span>
-            </label>
+              </Label>
+            </div>
           ))}
         </div>
       </div>
+
+      {(status !== 'all' || type !== 'all' || selectedGenres.length > 0) && (
+        <Button
+          variant="outline"
+          className="w-full border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800"
+          onClick={() => {
+            const newParams = new URLSearchParams(searchParams)
+            newParams.delete('status')
+            newParams.delete('type')
+            newParams.delete('genres')
+            setSearchParams(newParams)
+          }}
+        >
+          Limpar Filtros
+        </Button>
+      )}
     </div>
   )
 
@@ -157,7 +237,7 @@ export default function Search() {
                   'Explorar Obras'
                 )}
               </h1>
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex flex-wrap items-center gap-3 shrink-0">
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button
@@ -167,7 +247,10 @@ export default function Search() {
                       <SlidersHorizontal className="w-4 h-4 mr-2" /> Filtros
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="bg-zinc-950 border-zinc-800 text-white p-6">
+                  <SheetContent
+                    side="left"
+                    className="bg-zinc-950 border-zinc-800 text-white p-6 overflow-y-auto"
+                  >
                     <SheetHeader className="mb-6">
                       <SheetTitle className="text-white text-left">Filtros</SheetTitle>
                     </SheetHeader>
@@ -175,14 +258,33 @@ export default function Search() {
                   </SheetContent>
                 </Sheet>
                 <Select value={sort} onValueChange={(v) => updateParams({ sort: v })}>
-                  <SelectTrigger className="w-[180px] bg-zinc-900 border-zinc-800 text-white h-10">
+                  <SelectTrigger className="w-[180px] bg-zinc-900 border-zinc-800 text-white h-10 focus:ring-lime-400">
                     <SelectValue placeholder="Ordenar por" />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
-                    <SelectItem value="-reads">Mais Lidas</SelectItem>
-                    <SelectItem value="-rating">Melhor Avaliadas</SelectItem>
-                    <SelectItem value="-created">Mais Recentes</SelectItem>
-                    {query && <SelectItem value="semantic">Relevância Semântica</SelectItem>}
+                    <SelectItem value="-reads" className="focus:bg-zinc-800 focus:text-lime-400">
+                      Mais Populares
+                    </SelectItem>
+                    <SelectItem value="-rating" className="focus:bg-zinc-800 focus:text-lime-400">
+                      Melhor Avaliadas
+                    </SelectItem>
+                    <SelectItem value="-created" className="focus:bg-zinc-800 focus:text-lime-400">
+                      Mais Recentes
+                    </SelectItem>
+                    <SelectItem
+                      value="-is_hot,-reads"
+                      className="focus:bg-zinc-800 focus:text-lime-400"
+                    >
+                      Em Alta
+                    </SelectItem>
+                    {query && (
+                      <SelectItem
+                        value="semantic"
+                        className="focus:bg-zinc-800 focus:text-lime-400"
+                      >
+                        Relevância Semântica
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -194,7 +296,7 @@ export default function Search() {
               </div>
             ) : results.length > 0 ? (
               renderGrid(results)
-            ) : !query ? (
+            ) : !query && selectedGenres.length === 0 && status === 'all' && type === 'all' ? (
               <div className="animate-in fade-in duration-500">
                 {history.length > 0 && (
                   <div className="mb-12">
@@ -206,7 +308,7 @@ export default function Search() {
                         <Badge
                           key={h}
                           variant="secondary"
-                          className="cursor-pointer bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 hover:border-zinc-700 text-zinc-300 py-1.5 px-3"
+                          className="cursor-pointer bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 hover:border-zinc-700 text-zinc-300 py-1.5 px-3 transition-colors"
                           onClick={() => updateParams({ q: h })}
                         >
                           {h}
@@ -225,7 +327,7 @@ export default function Search() {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-32 text-center border border-zinc-800 border-dashed rounded-2xl bg-zinc-900/20">
+              <div className="flex flex-col items-center justify-center py-32 text-center border border-zinc-800 border-dashed rounded-2xl bg-zinc-900/20 px-4">
                 <SearchIcon className="w-12 h-12 text-zinc-600 mb-4" />
                 <h2 className="text-xl font-bold mb-2">Nenhum resultado encontrado</h2>
                 <p className="text-zinc-500 max-w-md mb-6">
@@ -233,10 +335,17 @@ export default function Search() {
                   ou buscar por gênero?
                 </p>
                 <Button
-                  onClick={() => updateParams({ q: '', status: 'all', type: 'all' })}
+                  onClick={() => {
+                    const newParams = new URLSearchParams(searchParams)
+                    newParams.delete('status')
+                    newParams.delete('type')
+                    newParams.delete('genres')
+                    newParams.delete('q')
+                    setSearchParams(newParams)
+                  }}
                   className="bg-lime-400 text-black hover:bg-lime-500 font-bold"
                 >
-                  Limpar Busca
+                  Limpar Busca e Filtros
                 </Button>
               </div>
             )}

@@ -35,17 +35,22 @@ export interface SearchOptions {
   query?: string
   status?: string
   type?: string
+  genres?: string[]
   sort?: string
   limit?: number
 }
 
 export const searchNovels = async (options: SearchOptions = {}) => {
-  const { query = '', status, type, sort = '-reads', limit = 20 } = options
+  const { query = '', status, type, genres = [], sort = '-reads', limit = 20 } = options
 
   let filterStr = ''
   const filters = []
   if (status && status !== 'all') filters.push(`status = "${status}"`)
   if (type && type !== 'all') filters.push(`type = "${type}"`)
+  if (genres.length > 0) {
+    const genreConditions = genres.map((g) => `genres ~ "${g}"`)
+    filters.push(`(${genreConditions.join(' || ')})`)
+  }
 
   if (filters.length > 0) filterStr = filters.join(' && ')
 

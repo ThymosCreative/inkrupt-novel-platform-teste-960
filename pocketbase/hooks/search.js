@@ -6,7 +6,7 @@ routerAdd('POST', '/backend/v1/search', (e) => {
   try {
     const filterStr = body.filter || ''
     const keywordFilter =
-      `(title ~ {:q} || genres ~ {:q} || author.name ~ {:q})` +
+      `(title ~ {:q} || description ~ {:q} || genres ~ {:q} || author.name ~ {:q})` +
       (filterStr ? ` && (${filterStr})` : '')
 
     let keywordResults = []

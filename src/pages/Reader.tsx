@@ -48,6 +48,7 @@ export default function Reader() {
   const [libraryEntryId, setLibraryEntryId] = useState<string | null>(null)
 
   const [activeDrawer, setActiveDrawer] = useState<'settings' | 'list' | 'comments' | null>(null)
+  const [commentsCount, setCommentsCount] = useState(0)
   const [showUI, setShowUI] = useState(true)
 
   const [settings, setSettings] = useState({
@@ -130,6 +131,13 @@ export default function Reader() {
           setLoading(false)
           window.scrollTo(0, 0)
 
+          if (c) {
+            pb.collection('comments')
+              .getList(1, 1, { filter: `chapter="${c.id}"` })
+              .then((res) => setCommentsCount(res.totalItems))
+              .catch(console.error)
+          }
+
           if (user && c) {
             pb.collection('library_entries')
               .getFullList({ filter: `user = "${user.id}" && novel = "${id}"` })
@@ -206,14 +214,18 @@ export default function Reader() {
 
   const sidebarBtnClass = (isActive: boolean) =>
     cn(
-      'w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200',
-      settings.theme === 'light' || settings.theme === 'sepia'
+      'w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-200',
+      settings.theme === 'dark'
         ? isActive
-          ? 'bg-[#D4C4A8] text-[#3D2B1F]'
-          : 'text-[#8B7355] hover:bg-[#D4C4A8] hover:text-[#3D2B1F]'
-        : isActive
           ? 'bg-zinc-800 text-white'
-          : 'text-zinc-500 hover:bg-zinc-800 hover:text-white',
+          : 'text-zinc-500 hover:bg-zinc-800 hover:text-white'
+        : settings.theme === 'sepia'
+          ? isActive
+            ? 'bg-[#D4C4A8] text-[#3D2B1F]'
+            : 'text-[#9C8467] hover:bg-[#D4C4A8] hover:text-[#3D2B1F]'
+          : isActive
+            ? 'bg-zinc-200 text-zinc-900'
+            : 'text-zinc-400 hover:bg-zinc-200 hover:text-zinc-900',
     )
 
   if (loading) {
@@ -247,9 +259,9 @@ export default function Reader() {
   }
 
   const headerThemeClasses = {
-    dark: 'bg-black/90 border-slate-900',
-    sepia: 'bg-[#EBE0CE]/90 border-[#D4C4A8]',
-    light: 'bg-white/90 border-zinc-200',
+    dark: 'bg-zinc-950 border-zinc-800 text-white',
+    sepia: 'bg-[#EBE0CE] border-[#C8B89A] text-[#3D2B1F]',
+    light: 'bg-white border-zinc-200 text-zinc-900',
   }
 
   const isAuthor = user && novel?.author === user.id
@@ -299,12 +311,15 @@ export default function Reader() {
               }}
               className={cn(
                 'transition-colors rounded-xl px-4 py-2 h-9 font-semibold border',
-                hasVoted
-                  ? 'bg-zinc-700 border-zinc-600 text-white hover:bg-zinc-600'
-                  : 'bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700',
+                settings.theme === 'dark'
+                  ? 'bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700'
+                  : settings.theme === 'sepia'
+                    ? 'bg-[#C8B89A] text-[#3D2B1F] border-transparent hover:opacity-80'
+                    : 'bg-zinc-900 text-white border-transparent hover:bg-zinc-800',
+                hasVoted ? 'opacity-50' : '',
               )}
             >
-              <Zap className={cn('w-4 h-4 mr-1.5', hasVoted ? 'fill-white' : '')} />
+              <Zap className={cn('w-4 h-4 mr-1.5', hasVoted ? 'fill-current' : '')} />
               Votar
             </Button>
           </div>
@@ -314,10 +329,10 @@ export default function Reader() {
       {/* Fixed Right Sidebar */}
       <div
         className={cn(
-          'fixed top-0 right-0 h-full w-[48px] z-50 flex flex-col items-center py-6 gap-6 transition-colors duration-300',
-          settings.theme === 'light' || settings.theme === 'sepia'
-            ? 'bg-[#E8DDD0] border-l border-[#C8B89A]'
-            : 'bg-zinc-950 border-l border-zinc-800',
+          'fixed top-0 right-0 h-full w-[48px] z-50 flex flex-col items-center justify-center gap-6 transition-colors duration-300',
+          settings.theme === 'dark' && 'bg-zinc-950 border-l border-zinc-800',
+          settings.theme === 'sepia' && 'bg-[#E8DDD0] border-l border-[#C8B89A]',
+          settings.theme === 'light' && 'bg-zinc-100 border-l border-zinc-200',
         )}
       >
         <button
@@ -672,15 +687,28 @@ export default function Reader() {
         })()}
 
         {/* Chapter Action Bar */}
-        <div className="flex justify-center gap-8 md:gap-16 py-8 border-y border-zinc-800 my-12">
+        <div
+          className={cn(
+            'flex justify-center items-center gap-16 py-8 border-t border-b my-8',
+            settings.theme === 'dark' ? 'border-zinc-800' : 'border-zinc-200',
+          )}
+        >
           <button
             onClick={() => toggleDrawer('comments')}
-            className="flex flex-col items-center gap-2 group"
+            className="flex flex-col items-center gap-1 group"
           >
-            <MessageCircle className="w-6 h-6 text-zinc-400 group-hover:text-white transition-colors" />
-            <span className="text-xs text-zinc-400 font-semibold tracking-widest group-hover:text-white transition-colors mt-1">
-              COMENTAR
+            <MessageCircle
+              className={cn(
+                'w-[22px] h-[22px] transition-colors',
+                settings.theme === 'dark'
+                  ? 'text-zinc-400 group-hover:text-white'
+                  : 'text-zinc-400 group-hover:text-zinc-700',
+              )}
+            />
+            <span className="text-[10px] font-semibold tracking-widest text-zinc-400 uppercase mt-1">
+              Comentar
             </span>
+            <span className="text-xs text-zinc-400 mt-0.5">{commentsCount}</span>
           </button>
           <button
             onClick={() => {
@@ -690,31 +718,42 @@ export default function Reader() {
               }
               voteNovel(novel.id)
             }}
-            className="flex flex-col items-center gap-2 group"
+            className="flex flex-col items-center gap-1 group"
           >
             <Zap
               className={cn(
-                'w-6 h-6 transition-colors',
-                hasVoted ? 'text-white fill-white' : 'text-zinc-400 group-hover:text-white',
+                'w-[22px] h-[22px] transition-colors',
+                hasVoted
+                  ? settings.theme === 'dark'
+                    ? 'text-white fill-white'
+                    : 'text-zinc-900 fill-zinc-900'
+                  : settings.theme === 'dark'
+                    ? 'text-zinc-400 group-hover:text-white'
+                    : 'text-zinc-400 group-hover:text-zinc-700',
               )}
             />
             <span
               className={cn(
-                'text-xs font-semibold tracking-widest transition-colors mt-1',
-                hasVoted ? 'text-white' : 'text-zinc-400 group-hover:text-white',
+                'text-[10px] font-semibold tracking-widest uppercase mt-1 transition-colors',
+                hasVoted
+                  ? settings.theme === 'dark'
+                    ? 'text-white'
+                    : 'text-zinc-900'
+                  : 'text-zinc-400',
               )}
             >
-              VOTAR
+              Votar
             </span>
+            <span className="text-xs text-zinc-400 mt-0.5">{novel.power_stones_count || 0}</span>
           </button>
           <button
             disabled
-            className="flex flex-col items-center gap-2 group opacity-50 cursor-not-allowed"
+            className="flex flex-col items-center gap-1 group opacity-50 cursor-not-allowed"
           >
-            <Gift className="w-6 h-6 text-zinc-400 group-hover:text-white transition-colors" />
-            <span className="text-xs text-zinc-400 font-semibold tracking-widest flex flex-col items-center mt-1 group-hover:text-white transition-colors">
-              PRESENTE
-              <span className="text-[10px] text-zinc-500 font-normal normal-case tracking-normal">
+            <Gift className="w-[22px] h-[22px] text-zinc-300 transition-colors" />
+            <span className="text-[10px] font-semibold tracking-widest text-zinc-300 uppercase mt-1 flex flex-col items-center">
+              Presente
+              <span className="text-[10px] text-zinc-400 font-normal normal-case tracking-normal mt-0.5">
                 Em breve
               </span>
             </span>
@@ -727,7 +766,12 @@ export default function Reader() {
           <button
             onClick={() => navigate(`/novel/${novel.id}/chapter/${chapterNum - 1}`)}
             disabled={chapterNum <= 1}
-            className="flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-medium transition-all bg-zinc-900 border border-zinc-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-zinc-800"
+            className={cn(
+              'flex-1 flex items-center justify-center gap-2 rounded-xl px-8 py-4 text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed',
+              settings.theme === 'dark'
+                ? 'bg-transparent border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-white'
+                : 'bg-transparent border border-zinc-300 text-zinc-600 hover:border-zinc-500 hover:text-zinc-900',
+            )}
           >
             <ChevronLeft className="w-5 h-5" />
             Anterior
@@ -735,7 +779,12 @@ export default function Reader() {
           <button
             onClick={() => navigate(`/novel/${novel.id}/chapter/${chapterNum + 1}`)}
             disabled={chapterNum >= totalChapters}
-            className="flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-medium transition-all bg-zinc-800 border border-zinc-700 text-white hover:bg-zinc-700 shadow-lg shadow-black/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={cn(
+              'flex-1 flex items-center justify-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed',
+              settings.theme === 'dark'
+                ? 'bg-white text-black hover:bg-zinc-200 border border-transparent'
+                : 'bg-zinc-900 text-white border border-zinc-900 hover:bg-zinc-700',
+            )}
           >
             Próximo
             <ChevronRight className="w-5 h-5" />

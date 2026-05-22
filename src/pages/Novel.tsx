@@ -57,12 +57,10 @@ export default function Novel() {
   const loadLibraryEntry = async (novelId: string) => {
     if (!user) return
     try {
-      const entries = await pb
-        .collection('library_entries')
-        .getFullList({
-          filter: `user = "${user.id}" && novel = "${novelId}"`,
-          expand: 'last_chapter',
-        })
+      const entries = await pb.collection('library_entries').getFullList({
+        filter: `user = "${user.id}" && novel = "${novelId}"`,
+        expand: 'last_chapter',
+      })
       if (entries.length > 0) setLibraryEntry(entries[0])
       else setLibraryEntry(null)
     } catch {
@@ -208,7 +206,7 @@ export default function Novel() {
   const avgRating =
     reviews.length > 0
       ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
-      : novel.rating || 0
+      : novel?.rating || 0
 
   if (loading) {
     return (

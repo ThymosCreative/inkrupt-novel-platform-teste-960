@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { useWallet } from '@/hooks/use-wallet'
 
 function timeAgo(dateString: string) {
   const date = new Date(dateString)
@@ -29,6 +30,7 @@ interface ChapterCommentsProps {
 export function ChapterComments({ chapterId, novelAuthorId, theme }: ChapterCommentsProps) {
   const { user } = useAuth()
   const { toast } = useToast()
+  const { addExp } = useWallet()
   const [comments, setComments] = useState<any[]>([])
   const [newComment, setNewComment] = useState('')
   const [loading, setLoading] = useState(true)
@@ -78,6 +80,7 @@ export function ChapterComments({ chapterId, novelAuthorId, theme }: ChapterComm
         content: newComment,
       })
       setNewComment('')
+      addExp(5, 'Comentário')
       toast({
         title: 'Sucesso',
         description: 'Comentário enviado!',

@@ -16,22 +16,24 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ChapterComments } from '@/components/ChapterComments'
-import { Coins, Lock } from 'lucide-react'
-import { unlockChapter } from '@/services/api'
+import { Coins, Lock, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { useWallet } from '@/hooks/use-wallet'
+import { getChapterCost } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
 
 export default function Reader() {
   const { id, num } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { wallet, unlockChapter, isChapterUnlocked } = useWallet()
   const chapterNum = parseInt(num || '1', 10)
 
   const [novel, setNovel] = useState<any>(null)
   const [chapter, setChapter] = useState<any>(null)
   const [totalChapters, setTotalChapters] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [unlocking, setUnlocking] = useState(false)
 
   const [progress, setProgress] = useState(0)
   const [settings, setSettings] = useState({
@@ -113,31 +115,6 @@ export default function Reader() {
         <Loader2 className="w-8 h-8 animate-spin" />
       </div>
     )
-  }
-
-  const handleUnlock = async () => {
-    if (!user) {
-      toast.error('Faça login para desbloquear.')
-      return
-    }
-    setUnlocking(true)
-    try {
-      await unlockChapter(chapter.id)
-      toast.success('Capítulo desbloqueado com sucesso!')
-
-      const c = await getChapterByNum(id!, chapterNum)
-      setChapter(c)
-
-      pb.collection('users').authRefresh().catch(console.error)
-    } catch (e: any) {
-      if (e?.response?.message === 'insufficient coins') {
-        toast.error('Moedas insuficientes. Por favor, recarregue seu saldo.')
-      } else {
-        toast.error('Erro ao desbloquear capítulo.')
-      }
-    } finally {
-      setUnlocking(false)
-    }
   }
 
   if (!chapter || !novel) {
@@ -302,45 +279,95 @@ export default function Reader() {
           {chapter.title}
         </h1>
 
-        {chapter.is_premium && !chapter.content ? (
-          <div className="bg-zinc-900/50 border border-amber-500/20 rounded-2xl p-8 text-center flex flex-col items-center max-w-lg mx-auto">
-            <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mb-4">
-              <Lock className="w-8 h-8 text-amber-500" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Capítulo Premium</h2>
-            <p className="text-zinc-400 mb-6">
-              Este capítulo é exclusivo e precisa ser desbloqueado para leitura. Apoie o autor
-              desbloqueando com moedas.
-            </p>
-            <div className="flex items-center gap-2 bg-amber-500/10 text-amber-500 px-4 py-2 rounded-xl font-bold mb-6">
-              <Coins className="w-5 h-5" />
-              Preço: {chapter.coin_price || 0} Moedas
-            </div>
-            <Button
-              onClick={handleUnlock}
-              disabled={unlocking}
-              className="bg-amber-500 text-black hover:bg-amber-600 font-bold w-full sm:w-auto px-8 h-12 rounded-xl text-base"
+        {(() => {
+          const isAuthor = user && novel?.author === user.id
+          const isLocked = !isAuthor && chapter.is_premium && !isChapterUnlocked(chapter.id)
+          const { type, cost } = getChapterCost(chapter)
+
+          const handleLocalUnlock = (method: 'coin' | 'fast_pass') => {
+            if (!user) {
+              toast.error('Faça login para desbloquear.')
+              return
+            }
+            const success = unlockChapter(chapter.id, method, cost)
+            if (success) {
+              toast.success('Capítulo desbloqueado!')
+            } else {
+              toast.error(method === 'coin' ? 'Coins insuficientes.' : 'Fast Passes insuficientes.')
+            }
+          }
+
+          if (isLocked) {
+            return (
+              <div className="bg-zinc-900/50 border border-border rounded-2xl p-8 text-center flex flex-col items-center max-w-lg mx-auto">
+                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                  <Lock className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2">Capítulo Bloqueado</h2>
+                {type === 'privilege' && (
+                  <Badge className="bg-lime-400 text-black mb-4 font-black">PRIVILEGE</Badge>
+                )}
+                <p className="text-muted-foreground mb-6">
+                  {type === 'privilege'
+                    ? 'Este capítulo é Privilege e só pode ser desbloqueado com Coins.'
+                    : 'Desbloqueie este capítulo premium para continuar lendo.'}
+                </p>
+
+                <div className="flex items-center gap-2 bg-muted px-4 py-2 rounded-xl font-bold mb-6">
+                  <Coins className="w-5 h-5 text-amber-500" />
+                  Custo: {cost} Coins
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                  {type === 'premium' && (
+                    <Button
+                      onClick={() => handleLocalUnlock('fast_pass')}
+                      variant="outline"
+                      className="flex-1 h-12 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 font-bold"
+                      disabled={wallet.fast_passes.reduce((a, b) => a + b.amount, 0) < 1}
+                    >
+                      <Zap className="w-4 h-4 mr-2" /> Usar 1 Fast Pass
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => handleLocalUnlock('coin')}
+                    className="flex-1 h-12 bg-amber-500 text-black hover:bg-amber-600 font-bold"
+                    disabled={wallet.coins < cost}
+                  >
+                    <Coins className="w-4 h-4 mr-2" /> Usar {cost} Coins
+                  </Button>
+                </div>
+
+                {wallet.coins < cost &&
+                  (type === 'privilege' ||
+                    wallet.fast_passes.reduce((a, b) => a + b.amount, 0) < 1) && (
+                    <Link
+                      to="/store"
+                      className="mt-6 text-sm text-lime-400 hover:underline font-medium"
+                    >
+                      Saldo insuficiente. Comprar Coins.
+                    </Link>
+                  )}
+              </div>
+            )
+          }
+
+          const contentText =
+            chapter.content ||
+            `[Conteúdo do Capítulo ${chapterNum}]\n\nEste capítulo foi desbloqueado com sucesso usando sua Inkrupt Wallet.\n\n${'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. '.repeat(15)}`
+
+          return (
+            <div
+              className="font-serif whitespace-pre-wrap transition-all duration-300"
+              style={{
+                fontSize: `${fontSizeMap[settings.fontSize]}px`,
+                lineHeight: spacingMap[settings.spacing],
+              }}
             >
-              {unlocking && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
-              Desbloquear Capítulo
-            </Button>
-            {user && (
-              <p className="mt-4 text-sm text-zinc-500 flex items-center gap-1.5">
-                Seu saldo: <Coins className="w-3.5 h-3.5" /> {user.coins || 0}
-              </p>
-            )}
-          </div>
-        ) : (
-          <div
-            className="font-serif whitespace-pre-wrap transition-all duration-300"
-            style={{
-              fontSize: `${fontSizeMap[settings.fontSize]}px`,
-              lineHeight: spacingMap[settings.spacing],
-            }}
-          >
-            {chapter.content}
-          </div>
-        )}
+              {contentText}
+            </div>
+          )
+        })()}
       </main>
 
       <div className="container mx-auto px-4 max-w-3xl flex justify-between gap-4">

@@ -31,7 +31,8 @@ import { searchNovels, getCoverUrl } from '@/services/api'
 import pb from '@/lib/pocketbase/client'
 import { useRealtime } from '@/hooks/use-realtime'
 import { useTheme } from '@/components/ThemeProvider'
-import { Coins } from 'lucide-react'
+import { Coins, Zap } from 'lucide-react'
+import { useWallet } from '@/hooks/use-wallet'
 
 function timeAgo(dateString: string) {
   const date = new Date(dateString)
@@ -64,6 +65,7 @@ export function Header() {
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const { user, isAuthenticated, signOut } = useAuth()
   const { theme, setTheme } = useTheme()
+  const { wallet, totalFastPasses } = useWallet()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -430,10 +432,20 @@ export function Header() {
 
             {isAuthenticated ? (
               <div className="flex items-center gap-2 sm:gap-4">
-                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 text-amber-500 rounded-full font-bold text-sm border border-amber-500/20">
+                <Link
+                  to="/store"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 text-amber-500 rounded-full font-bold text-sm border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
+                >
                   <Coins className="w-4 h-4" />
-                  {user?.coins || 0}
-                </div>
+                  {wallet.coins}
+                </Link>
+                <Link
+                  to="/store"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-500 rounded-full font-bold text-sm border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
+                >
+                  <Zap className="w-4 h-4" />
+                  {totalFastPasses}
+                </Link>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -548,9 +560,19 @@ export function Header() {
                         <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                       </div>
                     </div>
-                    <div className="px-3 py-2 sm:hidden flex items-center gap-2 text-amber-500 font-bold text-sm">
-                      <Coins className="w-4 h-4" />
-                      {user?.coins || 0} moedas
+                    <div className="px-3 py-2 sm:hidden flex flex-col gap-2 font-bold text-sm">
+                      <Link
+                        to="/store"
+                        className="flex items-center gap-2 text-amber-500 p-2 rounded-md hover:bg-amber-500/10"
+                      >
+                        <Coins className="w-4 h-4" /> {wallet.coins} Coins
+                      </Link>
+                      <Link
+                        to="/store"
+                        className="flex items-center gap-2 text-blue-500 p-2 rounded-md hover:bg-blue-500/10"
+                      >
+                        <Zap className="w-4 h-4" /> {totalFastPasses} Fast Passes
+                      </Link>
                     </div>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem

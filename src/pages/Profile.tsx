@@ -33,9 +33,9 @@ import {
   CheckCircle,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { topUpCoins } from '@/services/api'
-import { Coins } from 'lucide-react'
 import { AuthModal } from '@/components/AuthModal'
+import { useWallet } from '@/hooks/use-wallet'
+import { Progress } from '@/components/ui/progress'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import pb from '@/lib/pocketbase/client'
@@ -43,6 +43,7 @@ import pb from '@/lib/pocketbase/client'
 export default function Profile() {
   const { id } = useParams()
   const { user, signOut } = useAuth()
+  const { wallet } = useWallet()
   const navigate = useNavigate()
   const [profileUser, setProfileUser] = useState<any>(null)
   const [library, setLibrary] = useState<any[]>([])
@@ -256,59 +257,76 @@ export default function Profile() {
               </Button>
             )}
           </div>
-          {isOwnProfile && (
-            <div className="flex gap-3 shrink-0 flex-wrap justify-center md:justify-end">
-              {isOwnProfile && (
+          <div className="flex flex-col md:items-end gap-3 w-full md:w-auto">
+            {isOwnProfile && (
+              <div className="w-full max-w-xs bg-muted/30 p-4 rounded-2xl border flex flex-col gap-2">
+                <div className="flex justify-between items-end">
+                  <div>
+                    <span className="text-sm font-black text-lime-400 uppercase tracking-wider">
+                      Nível {wallet.level}
+                    </span>
+                    <div className="text-xs text-muted-foreground mt-0.5 font-medium">
+                      {wallet.level >= 5
+                        ? 'Nível Máximo'
+                        : `${wallet.exp} / ${wallet.level === 1 ? 100 : wallet.level === 2 ? 300 : wallet.level === 3 ? 600 : 1000} EXP`}
+                    </div>
+                  </div>
+                </div>
+                <Progress
+                  value={
+                    wallet.level >= 5
+                      ? 100
+                      : (wallet.exp /
+                          (wallet.level === 1
+                            ? 100
+                            : wallet.level === 2
+                              ? 300
+                              : wallet.level === 3
+                                ? 600
+                                : 1000)) *
+                        100
+                  }
+                  className="h-2 bg-muted [&>div]:bg-lime-400"
+                />
+              </div>
+            )}
+            {isOwnProfile && (
+              <div className="flex gap-3 shrink-0 flex-wrap justify-center md:justify-end">
+                {!profileUser.is_author &&
+                  (authorApplication ? (
+                    <Badge
+                      variant="outline"
+                      className="h-10 px-4 rounded-xl bg-amber-500/10 text-amber-500 border-amber-500 flex items-center justify-center"
+                    >
+                      Aplicação Pendente
+                    </Badge>
+                  ) : (
+                    <Button
+                      onClick={() => setIsApplyOpen(true)}
+                      className="h-10 bg-lime-400 text-black hover:bg-lime-500 rounded-xl font-bold"
+                    >
+                      Tornar-se Autor
+                    </Button>
+                  ))}
                 <Button
-                  onClick={async () => {
-                    try {
-                      await topUpCoins(user.id, 500)
-                      toast.success('Adicionado 500 Moedas!')
-                    } catch (e) {
-                      toast.error('Erro ao adicionar moedas.')
-                    }
-                  }}
                   variant="outline"
-                  className="rounded-xl border-amber-500 text-amber-500 hover:bg-amber-500/10"
+                  className="rounded-xl"
+                  onClick={() => navigate('/settings')}
                 >
-                  <Coins className="w-4 h-4 mr-2" /> Top Up (+500)
+                  <Settings className="w-4 h-4 mr-2" />
+                  Configurações
                 </Button>
-              )}
-              {!profileUser.is_author &&
-                (authorApplication ? (
-                  <Badge
-                    variant="outline"
-                    className="h-10 px-4 rounded-xl bg-amber-500/10 text-amber-500 border-amber-500 flex items-center justify-center"
-                  >
-                    Aplicação Pendente
-                  </Badge>
-                ) : (
-                  <Button
-                    onClick={() => setIsApplyOpen(true)}
-                    className="h-10 bg-lime-400 text-black hover:bg-lime-500 rounded-xl font-bold"
-                  >
-                    Tornar-se Autor
-                  </Button>
-                ))}
-              <Button
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => navigate('/settings')}
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Configurações
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={handleSignOut}
-                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl"
-              >
-                <LogOut className="w-4 h-4" />
-              </Button>
-            </div>
-          )}
+                <Button
+                  variant="ghost"
+                  onClick={handleSignOut}
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl"
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
-
         <Tabs defaultValue="library" className="w-full">
           <TabsList className="bg-transparent border-b w-full justify-start rounded-none h-auto p-0 mb-8">
             <TabsTrigger

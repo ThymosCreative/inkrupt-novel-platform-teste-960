@@ -192,6 +192,13 @@ export const unlockChapter = async (chapterId: string) => {
   })
 }
 
+export const sendVoteToBackend = async (novelId: string) => {
+  return pb.send('/backend/v1/vote', {
+    method: 'POST',
+    body: JSON.stringify({ novel_id: novelId }),
+  })
+}
+
 export const getAuthorApplication = async (userId: string) => {
   try {
     return await pb.collection('author_applications').getFirstListItem(`user="${userId}"`)

@@ -55,10 +55,13 @@ import {
 } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AddToListDialog } from '@/components/AddToListDialog'
+import { useWallet } from '@/hooks/use-wallet'
+import { getChapterCost } from '@/lib/utils'
 
 export default function Novel() {
   const { id } = useParams()
   const { user } = useAuth()
+  const { wallet, voteNovel, addExp } = useWallet()
 
   const [novel, setNovel] = useState<any>(null)
   const [chapters, setChapters] = useState<any[]>([])
@@ -227,6 +230,7 @@ export default function Novel() {
     try {
       await createNovelDiscussion(novel.id, discussionContent, user.id)
       setDiscussionContent('')
+      addExp(5, 'Discussão')
       toast.success('Comentário postado!')
     } catch (e) {
       toast.error('Erro ao postar comentário.')
@@ -303,6 +307,7 @@ export default function Novel() {
           rating: reviewRating,
           content: reviewContent,
         })
+        addExp(20, 'Review')
         toast.success('Review submitted successfully!')
       }
       setIsReviewOpen(false)
@@ -347,6 +352,14 @@ export default function Novel() {
         </Link>
       </div>
     )
+  }
+
+  const handleVote = () => {
+    if (!user) {
+      setIsAuthOpen(true)
+      return
+    }
+    voteNovel(novel.id)
   }
 
   const coverUrl = getCoverUrl(novel)
@@ -441,9 +454,17 @@ export default function Novel() {
                   <List className="w-4 h-4 text-zinc-400" /> {chapters.length}
                 </span>
               </div>
+              <div className="w-px h-8 bg-zinc-800 hidden md:block" />
+              <div className="flex flex-col items-center md:items-start">
+                <span className="text-zinc-500 text-xs uppercase font-bold">Votos</span>
+                <span className="flex items-center gap-1.5 font-semibold text-white mt-1">
+                  <Star className="w-4 h-4 text-purple-400 fill-purple-400" />{' '}
+                  {novel.power_stones_count || 0}
+                </span>
+              </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start flex-wrap">
               {chapters.length > 0 ? (
                 (() => {
                   const getResumeChapterNum = () => {
@@ -536,6 +557,13 @@ export default function Novel() {
               >
                 <ListPlus className="w-5 h-5" />
               </Button>
+              <Button
+                onClick={handleVote}
+                variant="outline"
+                className="w-full sm:w-auto border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 h-12 rounded-xl px-6 font-bold"
+              >
+                <Star className="w-5 h-5 mr-2" /> Votar ({wallet.power_stones})
+              </Button>
             </div>
           </div>{' '}
         </div>
@@ -624,13 +652,27 @@ export default function Novel() {
                         </span>
                       </div>
                       <div className="flex items-center gap-3 text-zinc-500 text-sm">
-                        {chap.is_premium ? (
-                          <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded text-xs font-semibold">
-                            <Lock className="w-3 h-3" /> {chap.coin_price || 0}
-                          </div>
-                        ) : (
-                          <div className="w-4" />
-                        )}
+                        {(() => {
+                          const { type, cost } = getChapterCost(chap)
+                          if (type === 'privilege')
+                            return (
+                              <div className="flex items-center gap-2">
+                                <Badge className="bg-lime-400 text-black text-[10px] uppercase font-black px-1.5 py-0 rounded-sm">
+                                  Privilege
+                                </Badge>
+                                <span className="flex items-center gap-1 text-xs text-zinc-400 font-bold">
+                                  <Lock className="w-3 h-3" /> {cost} Coins
+                                </span>
+                              </div>
+                            )
+                          if (type === 'premium')
+                            return (
+                              <div className="flex items-center gap-1 text-xs text-zinc-400 font-bold">
+                                <Lock className="w-3 h-3" /> {cost} Coins
+                              </div>
+                            )
+                          return <div className="w-4" />
+                        })()}
                       </div>
                     </Link>
                   ))}

@@ -215,17 +215,7 @@ export default function Reader() {
   const sidebarBtnClass = (isActive: boolean) =>
     cn(
       'w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-200',
-      settings.theme === 'dark'
-        ? isActive
-          ? 'bg-zinc-800 text-white'
-          : 'text-zinc-500 hover:bg-zinc-800 hover:text-white'
-        : settings.theme === 'sepia'
-          ? isActive
-            ? 'bg-[#D4C4A8] text-[#3D2B1F]'
-            : 'text-[#9C8467] hover:bg-[#D4C4A8] hover:text-[#3D2B1F]'
-          : isActive
-            ? 'bg-zinc-200 text-zinc-900'
-            : 'text-zinc-400 hover:bg-zinc-200 hover:text-zinc-900',
+      isActive ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:bg-zinc-800 hover:text-white',
     )
 
   if (loading) {
@@ -327,14 +317,7 @@ export default function Reader() {
       </header>
 
       {/* Fixed Right Sidebar */}
-      <div
-        className={cn(
-          'fixed top-0 right-0 h-full w-[48px] z-50 flex flex-col items-center justify-center gap-6 transition-colors duration-300',
-          settings.theme === 'dark' && 'bg-zinc-950 border-l border-zinc-800',
-          settings.theme === 'sepia' && 'bg-[#E8DDD0] border-l border-[#C8B89A]',
-          settings.theme === 'light' && 'bg-zinc-100 border-l border-zinc-200',
-        )}
-      >
+      <div className="fixed top-0 right-0 h-full w-[48px] z-50 flex flex-col items-center justify-center gap-6 transition-colors duration-300 bg-zinc-950 border-l border-zinc-800">
         <button
           onClick={() => toggleDrawer('settings')}
           className={sidebarBtnClass(activeDrawer === 'settings')}
@@ -367,14 +350,7 @@ export default function Reader() {
       >
         {/* Settings Drawer */}
         {activeDrawer === 'settings' && (
-          <div
-            className={cn(
-              'w-[280px] border-l p-6 flex flex-col gap-8 h-full overflow-y-auto',
-              settings.theme === 'sepia'
-                ? 'bg-[#2C2420] border-[#4A3B32]'
-                : 'bg-zinc-900 border-zinc-800',
-            )}
-          >
+          <div className="w-[280px] border-l p-6 flex flex-col gap-8 h-full overflow-y-auto bg-zinc-900 border-zinc-800">
             <h3 className="font-bold text-white mb-2">Configurações</h3>
 
             <div>
@@ -479,12 +455,7 @@ export default function Reader() {
               </div>
             </div>
 
-            <div
-              className={cn(
-                'flex items-center justify-between mt-auto pt-4 border-t',
-                settings.theme === 'sepia' ? 'border-[#4A3B32]' : 'border-zinc-800',
-              )}
-            >
+            <div className="flex items-center justify-between mt-auto pt-4 border-t border-zinc-800">
               <span className="text-sm text-zinc-300">Comentários de Parágrafo</span>
               <Switch
                 checked={settings.paragraphComments}
@@ -497,20 +468,8 @@ export default function Reader() {
 
         {/* List Drawer */}
         {activeDrawer === 'list' && (
-          <div
-            className={cn(
-              'w-[320px] flex flex-col h-full border-l shadow-2xl',
-              settings.theme === 'sepia'
-                ? 'bg-[#2C2420] border-[#4A3B32]'
-                : 'bg-zinc-900 border-zinc-800',
-            )}
-          >
-            <div
-              className={cn(
-                'p-4 flex items-center justify-between border-b',
-                settings.theme === 'sepia' ? 'border-[#4A3B32]' : 'border-zinc-800',
-              )}
-            >
+          <div className="w-[320px] flex flex-col h-full border-l shadow-2xl bg-zinc-900 border-zinc-800">
+            <div className="p-4 flex items-center justify-between border-b border-zinc-800">
               <h3 className="font-bold text-white truncate pr-4">{novel?.title}</h3>
               <button
                 onClick={() => setActiveDrawer(null)}
@@ -519,14 +478,7 @@ export default function Reader() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div
-              className={cn(
-                'p-4 border-b',
-                settings.theme === 'sepia'
-                  ? 'border-[#4A3B32] bg-black/10'
-                  : 'border-zinc-800 bg-zinc-900/50',
-              )}
-            >
+            <div className="p-4 border-b border-zinc-800 bg-zinc-900/50">
               <div className="flex justify-between text-sm mb-2 text-zinc-400">
                 <span>Progresso</span>
                 <span>
@@ -547,14 +499,9 @@ export default function Reader() {
                     setActiveDrawer(null)
                   }}
                   className={cn(
-                    'w-full text-left p-4 border-b flex items-center justify-between transition-colors',
-                    settings.theme === 'sepia'
-                      ? 'border-[#4A3B32]/50 hover:bg-black/20'
-                      : 'border-zinc-800/50 hover:bg-zinc-800/80',
+                    'w-full text-left p-4 border-b flex items-center justify-between transition-colors border-zinc-800/50 hover:bg-zinc-800/80',
                     ch.chapter_number === chapterNum
-                      ? settings.theme === 'sepia'
-                        ? 'bg-black/20 border-l-2 border-l-white text-white'
-                        : 'bg-zinc-800 border-l-2 border-l-white text-white'
+                      ? 'bg-zinc-800 border-l-2 border-l-white text-white'
                       : ch.chapter_number < chapterNum
                         ? 'text-zinc-500'
                         : 'text-zinc-300',
@@ -580,7 +527,7 @@ export default function Reader() {
           <ChapterComments
             chapterId={chapter.id}
             novelAuthorId={novel.author}
-            theme={settings.theme}
+            theme="dark"
             onClose={() => setActiveDrawer(null)}
           />
         )}
@@ -690,7 +637,11 @@ export default function Reader() {
         <div
           className={cn(
             'flex justify-center items-center gap-16 py-8 border-t border-b my-8',
-            settings.theme === 'dark' ? 'border-zinc-800' : 'border-zinc-200',
+            settings.theme === 'dark'
+              ? 'border-zinc-800'
+              : settings.theme === 'sepia'
+                ? 'border-[#C8B89A]'
+                : 'border-zinc-200',
           )}
         >
           <button
@@ -702,13 +653,27 @@ export default function Reader() {
                 'w-[22px] h-[22px] transition-colors',
                 settings.theme === 'dark'
                   ? 'text-zinc-400 group-hover:text-white'
-                  : 'text-zinc-400 group-hover:text-zinc-700',
+                  : settings.theme === 'sepia'
+                    ? 'text-[#9C8467] group-hover:text-[#3D2B1F]'
+                    : 'text-zinc-400 group-hover:text-zinc-700',
               )}
             />
-            <span className="text-[10px] font-semibold tracking-widest text-zinc-400 uppercase mt-1">
+            <span
+              className={cn(
+                'text-[10px] font-semibold tracking-widest uppercase mt-1',
+                settings.theme === 'sepia' ? 'text-[#9C8467]' : 'text-zinc-400',
+              )}
+            >
               Comentar
             </span>
-            <span className="text-xs text-zinc-400 mt-0.5">{commentsCount}</span>
+            <span
+              className={cn(
+                'text-xs mt-0.5',
+                settings.theme === 'sepia' ? 'text-[#9C8467]' : 'text-zinc-400',
+              )}
+            >
+              {commentsCount}
+            </span>
           </button>
           <button
             onClick={() => {
@@ -726,10 +691,14 @@ export default function Reader() {
                 hasVoted
                   ? settings.theme === 'dark'
                     ? 'text-white fill-white'
-                    : 'text-zinc-900 fill-zinc-900'
+                    : settings.theme === 'sepia'
+                      ? 'text-[#3D2B1F] fill-[#3D2B1F]'
+                      : 'text-zinc-900 fill-zinc-900'
                   : settings.theme === 'dark'
                     ? 'text-zinc-400 group-hover:text-white'
-                    : 'text-zinc-400 group-hover:text-zinc-700',
+                    : settings.theme === 'sepia'
+                      ? 'text-[#9C8467] group-hover:text-[#3D2B1F]'
+                      : 'text-zinc-400 group-hover:text-zinc-700',
               )}
             />
             <span
@@ -738,22 +707,48 @@ export default function Reader() {
                 hasVoted
                   ? settings.theme === 'dark'
                     ? 'text-white'
-                    : 'text-zinc-900'
-                  : 'text-zinc-400',
+                    : settings.theme === 'sepia'
+                      ? 'text-[#3D2B1F]'
+                      : 'text-zinc-900'
+                  : settings.theme === 'sepia'
+                    ? 'text-[#9C8467]'
+                    : 'text-zinc-400',
               )}
             >
               Votar
             </span>
-            <span className="text-xs text-zinc-400 mt-0.5">{novel.power_stones_count || 0}</span>
+            <span
+              className={cn(
+                'text-xs mt-0.5',
+                settings.theme === 'sepia' ? 'text-[#9C8467]' : 'text-zinc-400',
+              )}
+            >
+              {novel.power_stones_count || 0}
+            </span>
           </button>
           <button
             disabled
             className="flex flex-col items-center gap-1 group opacity-50 cursor-not-allowed"
           >
-            <Gift className="w-[22px] h-[22px] text-zinc-300 transition-colors" />
-            <span className="text-[10px] font-semibold tracking-widest text-zinc-300 uppercase mt-1 flex flex-col items-center">
+            <Gift
+              className={cn(
+                'w-[22px] h-[22px] transition-colors',
+                settings.theme === 'sepia' ? 'text-[#9C8467]' : 'text-zinc-300',
+              )}
+            />
+            <span
+              className={cn(
+                'text-[10px] font-semibold tracking-widest uppercase mt-1 flex flex-col items-center',
+                settings.theme === 'sepia' ? 'text-[#9C8467]' : 'text-zinc-300',
+              )}
+            >
               Presente
-              <span className="text-[10px] text-zinc-400 font-normal normal-case tracking-normal mt-0.5">
+              <span
+                className={cn(
+                  'text-[10px] font-normal normal-case tracking-normal mt-0.5',
+                  settings.theme === 'sepia' ? 'text-[#9C8467]' : 'text-zinc-400',
+                )}
+              >
                 Em breve
               </span>
             </span>
@@ -770,7 +765,9 @@ export default function Reader() {
               'flex-1 flex items-center justify-center gap-2 rounded-xl px-8 py-4 text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed',
               settings.theme === 'dark'
                 ? 'bg-transparent border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-white'
-                : 'bg-transparent border border-zinc-300 text-zinc-600 hover:border-zinc-500 hover:text-zinc-900',
+                : settings.theme === 'sepia'
+                  ? 'bg-transparent border border-[#C8B89A] text-[#9C8467] hover:border-[#9C8467] hover:text-[#3D2B1F]'
+                  : 'bg-transparent border border-zinc-300 text-zinc-600 hover:border-zinc-500 hover:text-zinc-900',
             )}
           >
             <ChevronLeft className="w-5 h-5" />
@@ -783,7 +780,9 @@ export default function Reader() {
               'flex-1 flex items-center justify-center gap-2 rounded-xl px-8 py-4 text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed',
               settings.theme === 'dark'
                 ? 'bg-white text-black hover:bg-zinc-200 border border-transparent'
-                : 'bg-zinc-900 text-white border border-zinc-900 hover:bg-zinc-700',
+                : settings.theme === 'sepia'
+                  ? 'bg-[#3D2B1F] text-[#F2E8D9] border border-[#3D2B1F] hover:opacity-90'
+                  : 'bg-zinc-900 text-white border border-zinc-900 hover:bg-zinc-700',
             )}
           >
             Próximo

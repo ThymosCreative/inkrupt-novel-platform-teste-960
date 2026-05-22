@@ -7,6 +7,7 @@ import Explore from './pages/Explore'
 import Search from './pages/Search'
 import Novel from './pages/Novel'
 import Reader from './pages/Reader'
+import ReadingList from './pages/ReadingList'
 import Profile from './pages/Profile'
 import Author from './pages/Author'
 import Settings from './pages/Settings'
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/search" element={<Search />} />
               <Route path="/novel/:id" element={<Novel />} />
               <Route path="/novel/:id/chapter/:num" element={<Reader />} />
+              <Route path="/list/:id" element={<ReadingList />} />
               <Route
                 path="/library"
                 element={

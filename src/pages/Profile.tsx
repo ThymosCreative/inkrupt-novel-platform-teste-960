@@ -4,7 +4,26 @@ import { NovelCard } from '@/components/NovelCard'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { Settings, LogOut, Loader2, BookOpen } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { toast } from 'sonner'
+import { Settings, LogOut, Loader2, BookOpen, List as ListIcon, Globe, Lock } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import pb from '@/lib/pocketbase/client'
 
@@ -15,9 +34,41 @@ export default function Profile() {
   const [profileUser, setProfileUser] = useState<any>(null)
   const [library, setLibrary] = useState<any[]>([])
   const [authoredNovels, setAuthoredNovels] = useState<any[]>([])
+  const [readingLists, setReadingLists] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [isCreateListOpen, setIsCreateListOpen] = useState(false)
+  const [newListTitle, setNewListTitle] = useState('')
+  const [newListDesc, setNewListDesc] = useState('')
+  const [newListVis, setNewListVis] = useState('public')
+  const [isCreatingList, setIsCreatingList] = useState(false)
 
   const isOwnProfile = !id || (user && id === user.id)
+
+  const handleCreateList = async () => {
+    if (!newListTitle.trim()) {
+      toast.error('O título é obrigatório.')
+      return
+    }
+    setIsCreatingList(true)
+    try {
+      const newList = await pb.collection('reading_lists').create({
+        user: user?.id,
+        title: newListTitle,
+        description: newListDesc,
+        visibility: newListVis,
+      })
+      setReadingLists([newList, ...readingLists])
+      setIsCreateListOpen(false)
+      setNewListTitle('')
+      setNewListDesc('')
+      setNewListVis('public')
+      toast.success('Lista criada com sucesso!')
+    } catch (e) {
+      toast.error('Erro ao criar lista.')
+    } finally {
+      setIsCreatingList(false)
+    }
+  }
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -32,15 +83,20 @@ export default function Profile() {
         const u = await pb.collection('users').getOne(targetId)
         setProfileUser(u)
 
-        const [libRes, novelsRes] = await Promise.all([
+        const [libRes, novelsRes, listsRes] = await Promise.all([
           pb
             .collection('library_entries')
             .getFullList({ filter: `user = "${targetId}"`, expand: 'novel,last_chapter' }),
           pb.collection('novels').getFullList({ filter: `author = "${targetId}"` }),
+          pb.collection('reading_lists').getFullList({
+            filter: `user = "${targetId}"${id && id !== user?.id ? ' && visibility = "public"' : ''}`,
+            sort: '-created',
+          }),
         ])
 
         setLibrary(libRes)
         setAuthoredNovels(novelsRes)
+        setReadingLists(listsRes)
       } catch (e) {
         console.error(e)
       } finally {
@@ -143,6 +199,12 @@ export default function Profile() {
                 Obras ({authoredNovels.length})
               </TabsTrigger>
             )}
+            <TabsTrigger
+              value="lists"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary px-6 py-3 text-base text-muted-foreground"
+            >
+              Listas ({readingLists.length})
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="library" className="animate-in fade-in">
@@ -206,6 +268,117 @@ export default function Profile() {
               </div>
             </TabsContent>
           )}
+
+          <TabsContent value="lists" className="animate-in fade-in">
+            {isOwnProfile && (
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold">Suas Listas</h3>
+                <Dialog open={isCreateListOpen} onOpenChange={setIsCreateListOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <ListIcon className="w-4 h-4 mr-2" /> Nova Lista
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md bg-zinc-950 border-zinc-800 text-white">
+                    <DialogHeader>
+                      <DialogTitle>Criar Nova Lista</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-zinc-400">Título</label>
+                        <Input
+                          value={newListTitle}
+                          onChange={(e) => setNewListTitle(e.target.value)}
+                          placeholder="Ex: Melhores de Cultivo"
+                          className="bg-zinc-900 border-zinc-800 text-white focus-visible:ring-lime-400"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-zinc-400">Descrição</label>
+                        <Textarea
+                          value={newListDesc}
+                          onChange={(e) => setNewListDesc(e.target.value)}
+                          placeholder="Uma breve descrição..."
+                          className="bg-zinc-900 border-zinc-800 text-white focus-visible:ring-lime-400"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-zinc-400">Visibilidade</label>
+                        <Select value={newListVis} onValueChange={setNewListVis}>
+                          <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white focus:ring-lime-400">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
+                            <SelectItem value="public" className="focus:bg-zinc-800 cursor-pointer">
+                              Pública (Todos podem ver)
+                            </SelectItem>
+                            <SelectItem
+                              value="private"
+                              className="focus:bg-zinc-800 cursor-pointer"
+                            >
+                              Privada (Apenas eu)
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        variant="ghost"
+                        onClick={() => setIsCreateListOpen(false)}
+                        className="hover:bg-zinc-800 hover:text-white"
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        onClick={handleCreateList}
+                        disabled={isCreatingList}
+                        className="bg-lime-400 text-black hover:bg-lime-500 font-bold"
+                      >
+                        {isCreatingList && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        Criar Lista
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
+
+            {readingLists.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {readingLists.map((list) => (
+                  <Link key={list.id} to={`/list/${list.id}`} className="block group">
+                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 h-full transition-all group-hover:border-lime-400 group-hover:shadow-md">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="bg-lime-400/10 text-lime-400 p-3 rounded-xl">
+                          <ListIcon className="w-6 h-6" />
+                        </div>
+                        {list.visibility === 'public' ? (
+                          <div className="flex items-center text-xs font-medium text-zinc-400 bg-zinc-800 px-2 py-1 rounded-md">
+                            <Globe className="w-3 h-3 mr-1" /> Público
+                          </div>
+                        ) : (
+                          <div className="flex items-center text-xs font-medium text-zinc-400 bg-zinc-800 px-2 py-1 rounded-md">
+                            <Lock className="w-3 h-3 mr-1" /> Privado
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="text-xl font-bold text-white mb-2 group-hover:text-lime-400 transition-colors line-clamp-1">
+                        {list.title}
+                      </h3>
+                      {list.description && (
+                        <p className="text-zinc-400 text-sm line-clamp-2">{list.description}</p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 text-center text-zinc-500">
+                Nenhuma lista de leitura encontrada.
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
       </div>
     </div>

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-22T00:22:28.873Z",
+  "generatedAt": "2026-05-22T00:28:07.429Z",
   "collections": [
     {
       "name": "users",
@@ -439,6 +439,108 @@
       "indexes": [
         "CREATE INDEX idx_notifications_user ON notifications (user, created DESC)",
         "CREATE INDEX idx_notifications_read ON notifications (user, is_read)"
+      ]
+    },
+    {
+      "name": "reading_lists",
+      "type": "base",
+      "apiRules": {
+        "list": "visibility = 'public' || user = @request.auth.id",
+        "view": "visibility = 'public' || user = @request.auth.id",
+        "create": "@request.auth.id != '' && user = @request.auth.id",
+        "update": "@request.auth.id != '' && user = @request.auth.id",
+        "delete": "@request.auth.id != '' && user = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "user",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "visibility",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["public", "private"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_reading_lists_user ON reading_lists (user)",
+        "CREATE INDEX idx_reading_lists_visibility ON reading_lists (visibility)"
+      ]
+    },
+    {
+      "name": "reading_list_items",
+      "type": "base",
+      "apiRules": {
+        "list": "reading_list.visibility = 'public' || reading_list.user = @request.auth.id",
+        "view": "reading_list.visibility = 'public' || reading_list.user = @request.auth.id",
+        "create": "@request.auth.id != '' && reading_list.user = @request.auth.id",
+        "update": "@request.auth.id != '' && reading_list.user = @request.auth.id",
+        "delete": "@request.auth.id != '' && reading_list.user = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "reading_list",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "reading_lists"
+        },
+        {
+          "name": "novel",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "novels"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_reading_list_items_unique ON reading_list_items (reading_list, novel)",
+        "CREATE INDEX idx_reading_list_items_list ON reading_list_items (reading_list)"
       ]
     }
   ]

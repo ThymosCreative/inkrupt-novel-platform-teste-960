@@ -36,8 +36,10 @@ import {
   Bookmark,
   CheckCircle,
   BookOpen,
+  ListPlus,
 } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { AddToListDialog } from '@/components/AddToListDialog'
 
 export default function Novel() {
   const { id } = useParams()
@@ -50,6 +52,7 @@ export default function Novel() {
   const [libraryEntry, setLibraryEntry] = useState<any>(null)
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const [isReviewOpen, setIsReviewOpen] = useState(false)
+  const [isListDialogOpen, setIsListDialogOpen] = useState(false)
   const [reviewContent, setReviewContent] = useState('')
   const [reviewRating, setReviewRating] = useState(0)
   const [isSubmittingReview, setIsSubmittingReview] = useState(false)
@@ -260,7 +263,6 @@ export default function Novel() {
               className="w-[220px] h-[330px] object-cover rounded-2xl shadow-2xl ring-1 ring-white/10"
             />
           </div>
-
           <div className="flex-1 pt-4 md:pt-12 text-center md:text-left">
             <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
               {novel.type === 'Original' && (
@@ -386,8 +388,18 @@ export default function Novel() {
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto border-zinc-700 bg-zinc-900/50 hover:bg-zinc-800 text-white h-12 rounded-xl text-base px-4"
+                onClick={() => {
+                  if (!user) setIsAuthOpen(true)
+                  else setIsListDialogOpen(true)
+                }}
+              >
+                <ListPlus className="w-5 h-5" />
+              </Button>
             </div>
-          </div>
+          </div>{' '}
         </div>
 
         <div className="mt-16 max-w-4xl mx-auto md:mx-0">
@@ -635,6 +647,13 @@ export default function Novel() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {novel && (
+        <AddToListDialog
+          novelId={novel.id}
+          isOpen={isListDialogOpen}
+          onOpenChange={setIsListDialogOpen}
+        />
+      )}
     </div>
   )
 }

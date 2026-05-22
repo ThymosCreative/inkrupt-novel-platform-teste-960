@@ -27,6 +27,7 @@
   }
 
   .sepia {
+    filter: none !important;
     --background: 40 40% 90%;
     --foreground: 25 30% 20%;
     --card: 40 40% 85%;

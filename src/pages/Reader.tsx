@@ -18,6 +18,7 @@ import {
   BookmarkCheck,
   Check,
   X,
+  Gift,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ChapterComments } from '@/components/ChapterComments'
@@ -46,9 +47,8 @@ export default function Reader() {
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [libraryEntryId, setLibraryEntryId] = useState<string | null>(null)
 
-  const [activeDrawer, setActiveDrawer] = useState<'settings' | 'list' | null>(null)
+  const [activeDrawer, setActiveDrawer] = useState<'settings' | 'list' | 'comments' | null>(null)
   const [showUI, setShowUI] = useState(true)
-  const commentsRef = useRef<HTMLDivElement>(null)
 
   const [settings, setSettings] = useState({
     theme: user?.preferences?.theme || 'dark',
@@ -196,12 +196,8 @@ export default function Reader() {
     }
   }
 
-  const toggleDrawer = (drawer: 'settings' | 'list') => {
+  const toggleDrawer = (drawer: 'settings' | 'list' | 'comments') => {
     setActiveDrawer((prev) => (prev === drawer ? null : drawer))
-  }
-
-  const scrollToComments = () => {
-    commentsRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
   if (loading) {
@@ -276,7 +272,6 @@ export default function Reader() {
           <div className="flex justify-end items-center">
             <Button
               variant="outline"
-              size="sm"
               onClick={() => {
                 if (!user) {
                   toast.error('Faça login para votar.')
@@ -285,40 +280,42 @@ export default function Reader() {
                 voteNovel(novel.id)
               }}
               className={cn(
-                'h-8 transition-colors border',
+                'transition-colors rounded-xl px-4 py-2 h-9 font-semibold',
                 votes.some(
                   (v: any) =>
                     v.novel_id === novel.id && v.voted_at > new Date().setHours(0, 0, 0, 0),
                 )
-                  ? 'bg-lime-400 border-lime-400 text-black hover:bg-lime-500 hover:text-black'
-                  : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:text-lime-400 hover:border-lime-400',
+                  ? 'bg-zinc-800 border border-lime-400 text-lime-400 hover:bg-zinc-800 hover:text-lime-400'
+                  : 'bg-lime-400 border-lime-400 text-black hover:bg-lime-500 hover:text-black',
               )}
             >
-              <Zap className="w-4 h-4 mr-1.5" />
+              <Zap
+                className={cn(
+                  'w-4 h-4 mr-1.5',
+                  votes.some(
+                    (v: any) =>
+                      v.novel_id === novel.id && v.voted_at > new Date().setHours(0, 0, 0, 0),
+                  )
+                    ? 'fill-lime-400'
+                    : '',
+                )}
+              />
               Votar
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Drawers Overlay */}
-      {activeDrawer && (
-        <div
-          className="fixed inset-0 bg-black/60 z-40 transition-opacity"
-          onClick={() => setActiveDrawer(null)}
-        />
-      )}
-
       {/* Drawers Container */}
       <div
         className={cn(
-          'fixed top-0 right-0 h-full bg-zinc-900 border-l border-zinc-800 z-50 transition-transform duration-300 transform flex',
-          activeDrawer ? 'translate-x-0' : 'translate-x-full',
+          'fixed top-0 right-0 h-full z-50 transition-transform duration-300 transform flex',
+          activeDrawer ? 'translate-x-0 shadow-2xl' : 'translate-x-full',
         )}
       >
         {/* Settings Drawer */}
         {activeDrawer === 'settings' && (
-          <div className="w-[280px] p-6 flex flex-col gap-8 h-full overflow-y-auto">
+          <div className="w-[280px] bg-zinc-900 border-l border-zinc-800 p-6 flex flex-col gap-8 h-full overflow-y-auto">
             <h3 className="font-bold text-white mb-2">Configurações</h3>
 
             <div>
@@ -328,21 +325,21 @@ export default function Reader() {
                   onClick={() => updateSetting('theme', 'dark')}
                   className={cn(
                     'w-10 h-10 rounded-full bg-black border-2',
-                    settings.theme === 'dark' ? 'border-lime-400' : 'border-zinc-700',
+                    settings.theme === 'dark' ? 'border-lime-400' : 'border-zinc-600',
                   )}
                 />
                 <button
                   onClick={() => updateSetting('theme', 'sepia')}
                   className={cn(
                     'w-10 h-10 rounded-full bg-[#F5E6C8] border-2',
-                    settings.theme === 'sepia' ? 'border-lime-400' : 'border-zinc-700',
+                    settings.theme === 'sepia' ? 'border-lime-400' : 'border-zinc-400',
                   )}
                 />
                 <button
                   onClick={() => updateSetting('theme', 'light')}
                   className={cn(
                     'w-10 h-10 rounded-full bg-white border-2',
-                    settings.theme === 'light' ? 'border-lime-400' : 'border-zinc-700',
+                    settings.theme === 'light' ? 'border-lime-400' : 'border-zinc-300',
                   )}
                 />
               </div>
@@ -436,7 +433,7 @@ export default function Reader() {
 
         {/* List Drawer */}
         {activeDrawer === 'list' && (
-          <div className="w-[320px] flex flex-col h-full bg-zinc-900 border-l border-zinc-800">
+          <div className="w-[320px] flex flex-col h-full bg-zinc-900 border-l border-zinc-800 shadow-2xl">
             <div className="p-4 flex items-center justify-between border-b border-zinc-800">
               <h3 className="font-bold text-white truncate pr-4">{novel?.title}</h3>
               <button
@@ -489,6 +486,15 @@ export default function Reader() {
             </div>
           </div>
         )}
+
+        {/* Comments Drawer */}
+        {activeDrawer === 'comments' && (
+          <ChapterComments
+            chapterId={chapter.id}
+            novelAuthorId={novel.author}
+            onClose={() => setActiveDrawer(null)}
+          />
+        )}
       </div>
 
       {/* Sidebar Controls */}
@@ -523,7 +529,7 @@ export default function Reader() {
           )}
         </button>
         <button
-          onClick={scrollToComments}
+          onClick={() => toggleDrawer('comments')}
           className="w-12 h-12 rounded-full bg-zinc-900/80 border border-zinc-800 text-zinc-400 hover:text-white hover:border-lime-400 flex items-center justify-center backdrop-blur-sm transition-all shadow-xl"
         >
           <MessageCircle className="w-5 h-5" />
@@ -629,10 +635,70 @@ export default function Reader() {
             />
           )
         })()}
+
+        {/* Chapter Action Bar */}
+        <div className="flex justify-center gap-8 md:gap-16 py-8 border-y border-zinc-800 my-12">
+          <button
+            onClick={() => toggleDrawer('comments')}
+            className="flex flex-col items-center gap-2 group"
+          >
+            <MessageCircle className="w-6 h-6 text-zinc-400 group-hover:text-white transition-colors" />
+            <span className="text-xs text-zinc-400 font-semibold tracking-widest group-hover:text-white transition-colors mt-1">
+              COMENTAR
+            </span>
+          </button>
+          <button
+            onClick={() => {
+              if (!user) {
+                toast.error('Faça login para votar.')
+                return
+              }
+              voteNovel(novel.id)
+            }}
+            className="flex flex-col items-center gap-2 group"
+          >
+            <Zap
+              className={cn(
+                'w-6 h-6 transition-colors',
+                votes.some(
+                  (v: any) =>
+                    v.novel_id === novel.id && v.voted_at > new Date().setHours(0, 0, 0, 0),
+                )
+                  ? 'text-lime-400 fill-lime-400'
+                  : 'text-zinc-400 group-hover:text-white',
+              )}
+            />
+            <span
+              className={cn(
+                'text-xs font-semibold tracking-widest transition-colors mt-1',
+                votes.some(
+                  (v: any) =>
+                    v.novel_id === novel.id && v.voted_at > new Date().setHours(0, 0, 0, 0),
+                )
+                  ? 'text-lime-400'
+                  : 'text-zinc-400 group-hover:text-white',
+              )}
+            >
+              VOTAR
+            </span>
+          </button>
+          <button
+            disabled
+            className="flex flex-col items-center gap-2 group opacity-50 cursor-not-allowed"
+          >
+            <Gift className="w-6 h-6 text-zinc-400" />
+            <span className="text-xs text-zinc-400 font-semibold tracking-widest flex flex-col items-center mt-1">
+              PRESENTE
+              <span className="text-[10px] text-zinc-600 font-normal normal-case tracking-normal">
+                Em breve
+              </span>
+            </span>
+          </button>
+        </div>
       </main>
 
       <div className="container mx-auto px-4 flex flex-col gap-6 max-w-3xl">
-        <div className="flex justify-between gap-4 mt-8 mb-8">
+        <div className="flex justify-between gap-4 mt-2 mb-8">
           <button
             onClick={() => navigate(`/novel/${novel.id}/chapter/${chapterNum - 1}`)}
             disabled={chapterNum <= 1}
@@ -650,17 +716,6 @@ export default function Reader() {
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
-      </div>
-
-      <div
-        ref={commentsRef}
-        className="container mx-auto px-4 pb-10 transition-all duration-300 max-w-3xl"
-      >
-        <ChapterComments
-          chapterId={chapter.id}
-          novelAuthorId={novel.author}
-          theme={settings.theme}
-        />
       </div>
     </div>
   )

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Loader2 } from 'lucide-react'
+import { Loader2, X, ThumbsUp } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useWallet } from '@/hooks/use-wallet'
 
@@ -24,10 +24,10 @@ function timeAgo(dateString: string) {
 interface ChapterCommentsProps {
   chapterId: string
   novelAuthorId?: string
-  theme?: string
+  onClose: () => void
 }
 
-export function ChapterComments({ chapterId, novelAuthorId, theme }: ChapterCommentsProps) {
+export function ChapterComments({ chapterId, novelAuthorId, onClose }: ChapterCommentsProps) {
   const { user } = useAuth()
   const { toast } = useToast()
   const { addExp } = useWallet()
@@ -35,12 +35,13 @@ export function ChapterComments({ chapterId, novelAuthorId, theme }: ChapterComm
   const [newComment, setNewComment] = useState('')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [activeTab, setActiveTab] = useState<'liked' | 'recent'>('liked')
 
   const fetchComments = async () => {
     try {
       const records = await pb.collection('comments').getFullList({
         filter: `chapter = "${chapterId}"`,
-        sort: '-created',
+        sort: '-created', // For mocked likes scenario, we still sort by created from API
         expand: 'user',
       })
       setComments(records)
@@ -53,7 +54,7 @@ export function ChapterComments({ chapterId, novelAuthorId, theme }: ChapterComm
 
   useEffect(() => {
     fetchComments()
-  }, [chapterId])
+  }, [chapterId, activeTab])
 
   useRealtime('comments', () => {
     fetchComments()
@@ -97,93 +98,127 @@ export function ChapterComments({ chapterId, novelAuthorId, theme }: ChapterComm
     }
   }
 
-  const textColor =
-    theme === 'light' ? 'text-zinc-900' : theme === 'sepia' ? 'text-[#5C4A1E]' : 'text-zinc-300'
-  const subtextColor =
-    theme === 'light' ? 'text-zinc-500' : theme === 'sepia' ? 'text-[#5C4A1E]/70' : 'text-zinc-500'
-  const bgColor =
-    theme === 'light' ? 'bg-zinc-50' : theme === 'sepia' ? 'bg-[#F5E6C8]' : 'bg-zinc-900/50'
-
   return (
-    <div
-      className={cn(
-        'mt-12 pt-8 border-t',
-        theme === 'light'
-          ? 'border-zinc-200'
-          : theme === 'sepia'
-            ? 'border-[#e6dcc0]'
-            : 'border-zinc-800',
-      )}
-    >
-      <h3 className={cn('text-2xl font-bold mb-8', textColor)}>Comentários</h3>
+    <div className="flex flex-col h-full bg-zinc-900 w-[380px] border-l border-zinc-800 shadow-2xl">
+      <div className="flex items-center justify-between p-4 border-b border-zinc-800">
+        <div className="flex items-center gap-2">
+          <h3 className="font-bold text-white text-lg">Comentários do Capítulo</h3>
+          <span className="bg-zinc-800 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+            {comments.length}
+          </span>
+        </div>
+        <button onClick={onClose} className="text-zinc-400 hover:text-white">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
 
-      {user ? (
-        <form onSubmit={handleSubmit} className="mb-10">
-          <Textarea
-            placeholder="O que achou deste capítulo?"
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            className={cn('mb-4 min-h-[100px]', bgColor, textColor, 'border-transparent')}
-          />
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              disabled={submitting || !newComment.trim()}
-              className="bg-lime-400 text-black hover:bg-lime-500"
-            >
-              {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Comentar
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <div className={cn('p-6 rounded-xl mb-10 text-center', bgColor)}>
-          <p className={subtextColor}>Faça login para participar da discussão.</p>
-        </div>
-      )}
-
-      {loading ? (
-        <div className="flex justify-center py-10">
-          <Loader2 className="w-8 h-8 animate-spin text-lime-400" />
-        </div>
-      ) : comments.length === 0 ? (
-        <div className={cn('text-center py-10', subtextColor)}>
-          Nenhum comentário ainda. Seja o primeiro a comentar!
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {comments.map((comment) => (
-            <div key={comment.id} className="flex gap-4">
-              <Avatar className="w-10 h-10 border border-zinc-800">
-                <AvatarImage
-                  src={
-                    comment.expand?.user?.avatar
-                      ? pb.files.getURL(comment.expand.user, comment.expand.user.avatar)
-                      : undefined
-                  }
-                />
-                <AvatarFallback className="bg-zinc-800 text-zinc-400">
-                  {comment.expand?.user?.name?.[0]?.toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <div className="flex items-baseline gap-2 mb-1">
-                  <span className={cn('font-bold', textColor)}>
-                    {comment.expand?.user?.name || 'User'}
-                  </span>
-                  {comment.expand?.user?.id === novelAuthorId && (
-                    <span className="bg-primary/20 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-sm">
-                      Autor
-                    </span>
-                  )}
-                  <span className={cn('text-xs', subtextColor)}>{timeAgo(comment.created)}</span>
-                </div>
-                <p className={cn('whitespace-pre-wrap text-sm', textColor)}>{comment.content}</p>
-              </div>
+      <div className="flex-1 overflow-y-auto p-4">
+        {user ? (
+          <form onSubmit={handleSubmit} className="mb-6">
+            <Textarea
+              placeholder="O que achou deste capítulo?"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              className="bg-zinc-800 border-zinc-700 focus:border-lime-400 text-white mb-3 min-h-[80px] resize-none"
+            />
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                disabled={submitting || !newComment.trim()}
+                className="bg-lime-400 text-black hover:bg-lime-500 rounded-xl h-9 px-4 font-bold text-sm"
+              >
+                {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Comentar
+              </Button>
             </div>
-          ))}
+          </form>
+        ) : (
+          <div className="p-4 rounded-xl mb-6 text-center bg-zinc-800/50">
+            <p className="text-zinc-400 text-sm">Faça login para participar da discussão.</p>
+          </div>
+        )}
+
+        <div className="flex border-b border-zinc-800 mb-6">
+          <button
+            onClick={() => setActiveTab('liked')}
+            className={cn(
+              'px-4 py-2 text-sm font-semibold transition-colors',
+              activeTab === 'liked'
+                ? 'border-b-2 border-lime-400 text-lime-400'
+                : 'text-zinc-400 hover:text-zinc-300',
+            )}
+          >
+            Mais curtidos
+          </button>
+          <button
+            onClick={() => setActiveTab('recent')}
+            className={cn(
+              'px-4 py-2 text-sm font-semibold transition-colors',
+              activeTab === 'recent'
+                ? 'border-b-2 border-lime-400 text-lime-400'
+                : 'text-zinc-400 hover:text-zinc-300',
+            )}
+          >
+            Mais recentes
+          </button>
         </div>
-      )}
+
+        {loading ? (
+          <div className="flex justify-center py-10">
+            <Loader2 className="w-6 h-6 animate-spin text-lime-400" />
+          </div>
+        ) : comments.length === 0 ? (
+          <div className="text-center py-10 text-zinc-500 text-sm">
+            Nenhum comentário ainda. Seja o primeiro a comentar!
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {comments.map((comment) => (
+              <div key={comment.id} className="flex gap-3">
+                <Avatar className="w-8 h-8 border border-zinc-800 shrink-0">
+                  <AvatarImage
+                    src={
+                      comment.expand?.user?.avatar
+                        ? pb.files.getURL(comment.expand.user, comment.expand.user.avatar)
+                        : undefined
+                    }
+                  />
+                  <AvatarFallback className="bg-zinc-800 text-zinc-400 text-xs">
+                    {comment.expand?.user?.name?.[0]?.toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="font-semibold text-white text-sm truncate">
+                      {comment.expand?.user?.name || 'User'}
+                    </span>
+                    {comment.expand?.user?.id === novelAuthorId && (
+                      <span className="bg-lime-400/20 text-lime-400 text-[10px] font-bold px-1.5 py-0.5 rounded-sm">
+                        Autor
+                      </span>
+                    )}
+                    <span className="text-xs text-zinc-500 shrink-0">
+                      {timeAgo(comment.created)}
+                    </span>
+                  </div>
+                  <p className="whitespace-pre-wrap text-sm text-zinc-300 mb-2 leading-snug break-words">
+                    {comment.content}
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <button className="flex items-center gap-1.5 text-zinc-400 hover:text-lime-400 transition-colors group">
+                      <ThumbsUp className="w-3.5 h-3.5" />
+                      <span className="text-xs font-medium">{Math.floor(Math.random() * 50)}</span>
+                    </button>
+                    <button className="text-lime-400 text-xs font-semibold hover:underline">
+                      Ver respostas
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

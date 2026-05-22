@@ -98,11 +98,11 @@ export function ChapterComments({ chapterId, novelAuthorId, theme }: ChapterComm
   }
 
   const textColor =
-    theme === 'light' ? 'text-zinc-900' : theme === 'sepia' ? 'text-[#5b4636]' : 'text-zinc-300'
+    theme === 'light' ? 'text-zinc-900' : theme === 'sepia' ? 'text-[#5C4A1E]' : 'text-zinc-300'
   const subtextColor =
-    theme === 'light' ? 'text-zinc-500' : theme === 'sepia' ? 'text-[#5b4636]/70' : 'text-zinc-500'
+    theme === 'light' ? 'text-zinc-500' : theme === 'sepia' ? 'text-[#5C4A1E]/70' : 'text-zinc-500'
   const bgColor =
-    theme === 'light' ? 'bg-zinc-50' : theme === 'sepia' ? 'bg-[#e6dcc0]' : 'bg-zinc-900/50'
+    theme === 'light' ? 'bg-zinc-50' : theme === 'sepia' ? 'bg-[#F5E6C8]' : 'bg-zinc-900/50'
 
   return (
     <div

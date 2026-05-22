@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { toast } from 'sonner'
-import { sendVoteToBackend } from '@/services/api'
+import pb from '@/lib/pocketbase/client'
+import { useAuth } from '@/hooks/use-auth'
 
 export interface FastPass {
   amount: number
@@ -40,10 +41,10 @@ interface WalletContextType {
   transactions: Transaction[]
   unlockedChapters: UnlockedChapter[]
   votes: Vote[]
-  buyCoins: (amount: number, price: number) => void
-  addExp: (amount: number, reason: string) => void
-  voteNovel: (novelId: string) => boolean
-  unlockChapter: (chapterId: string, method: 'coin' | 'fast_pass', cost: number) => boolean
+  buyCoins: (amount: number, price: number) => Promise<void>
+  addExp: (amount: number, reason: string) => Promise<void>
+  voteNovel: (novelId: string) => Promise<boolean>
+  unlockChapter: (chapterId: string, method: 'coin' | 'fast_pass', cost: number) => Promise<boolean>
   isChapterUnlocked: (chapterId: string) => boolean
   totalFastPasses: number
 }
@@ -75,18 +76,19 @@ const defaultWallet: Wallet = {
 }
 
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
-  const [wallet, setWallet] = useState<Wallet>(() => {
-    try {
-      const saved = localStorage.getItem('inkrupt_wallet')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        return { ...defaultWallet, ...parsed, fast_passes: parsed.fast_passes || [] }
+  const { user } = useAuth()
+
+  const wallet: Wallet = user
+    ? {
+        coins: user.coins || 0,
+        fast_passes: user.fast_passes || [],
+        power_stones: user.power_stones ?? 1,
+        last_checkin: user.last_checkin || 0,
+        last_vote_reward: user.last_vote_reward || 0,
+        exp: user.exp || 0,
+        level: user.level || 1,
       }
-    } catch {
-      // ignore
-    }
-    return defaultWallet
-  })
+    : defaultWallet
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     try {
@@ -97,14 +99,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
   })
 
-  const [unlockedChapters, setUnlockedChapters] = useState<UnlockedChapter[]>(() => {
-    try {
-      const saved = localStorage.getItem('inkrupt_unlocked')
-      return saved ? JSON.parse(saved) : []
-    } catch {
-      return []
-    }
-  })
+  const [unlockedChapters, setUnlockedChapters] = useState<UnlockedChapter[]>([])
 
   const [votes, setVotes] = useState<Vote[]>(() => {
     try {
@@ -116,81 +111,139 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   })
 
   useEffect(() => {
-    localStorage.setItem('inkrupt_wallet', JSON.stringify(wallet))
-  }, [wallet])
-
-  useEffect(() => {
     localStorage.setItem('inkrupt_transactions', JSON.stringify(transactions))
   }, [transactions])
-
-  useEffect(() => {
-    localStorage.setItem('inkrupt_unlocked', JSON.stringify(unlockedChapters))
-  }, [unlockedChapters])
 
   useEffect(() => {
     localStorage.setItem('inkrupt_votes', JSON.stringify(votes))
   }, [votes])
 
+  useEffect(() => {
+    if (user) {
+      pb.collection('unlocked_chapters')
+        .getFullList({
+          filter: `user = "${user.id}"`,
+        })
+        .then((records) => {
+          setUnlockedChapters(
+            records.map((r) => ({
+              chapter_id: r.chapter,
+              unlocked_at: new Date(r.created).getTime(),
+              method: 'coin',
+            })),
+          )
+        })
+        .catch(console.error)
+    } else {
+      setUnlockedChapters([])
+    }
+  }, [user?.id])
+
   const addTransaction = (amount: number, type: Transaction['type'], description: string) => {
     setTransactions((prev) => [{ amount, type, description, created_at: Date.now() }, ...prev])
   }
 
-  const addExp = (amount: number, reason: string) => {
-    setWallet((prev) => {
-      const newExp = prev.exp + amount
-      const oldLevel = getLevel(prev.exp)
+  const addExp = async (amount: number, reason: string) => {
+    if (!user) return
+    const newExp = wallet.exp + amount
+    const oldLevel = getLevel(wallet.exp)
+    const newLevel = getLevel(newExp)
+
+    let newFp = [...(wallet.fast_passes || []).filter((fp) => fp.expires_at > Date.now())]
+    let newStones = wallet.power_stones
+
+    if (newLevel > oldLevel) {
+      if (newLevel === 2) newFp.push({ amount: 3, expires_at: Date.now() + 7 * 86400000 })
+      if (newLevel === 3) newFp.push({ amount: 5, expires_at: Date.now() + 7 * 86400000 })
+      if (newLevel === 4) {
+        newFp.push({ amount: 5, expires_at: Date.now() + 7 * 86400000 })
+        newStones += 1
+      }
+      if (newLevel === 5) {
+        newFp.push({ amount: 10, expires_at: Date.now() + 7 * 86400000 })
+        newStones += 2
+      }
+      setTimeout(() => toast.success(`Parabéns! Você subiu para o Nível ${newLevel}!`), 500)
+    }
+
+    try {
+      await pb.collection('users').update(user.id, {
+        exp: newExp,
+        level: newLevel,
+        fast_passes: newFp,
+        power_stones: newStones,
+      })
+      addTransaction(amount, 'exp', reason)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  useEffect(() => {
+    if (!user) return
+    const today = new Date().setHours(0, 0, 0, 0)
+    if (wallet.last_checkin < today) {
+      const currentLevel = getLevel(wallet.exp)
+      const dailyStones = getDailyStones(currentLevel)
+
+      const validFps = (wallet.fast_passes || []).filter((fp) => fp.expires_at > Date.now())
+      const newFp = { amount: 1, expires_at: Date.now() + 7 * 86400000 }
+
+      const newExp = wallet.exp + 10
       const newLevel = getLevel(newExp)
 
-      let newFp = [...(prev.fast_passes || []).filter((fp) => fp.expires_at > Date.now())]
-      let newStones = prev.power_stones
+      let nextFps = [...validFps, newFp]
+      let nextStones = dailyStones
 
-      if (newLevel > oldLevel) {
-        if (newLevel === 2) newFp.push({ amount: 3, expires_at: Date.now() + 7 * 86400000 })
-        if (newLevel === 3) newFp.push({ amount: 5, expires_at: Date.now() + 7 * 86400000 })
+      if (newLevel > currentLevel) {
+        if (newLevel === 2) nextFps.push({ amount: 3, expires_at: Date.now() + 7 * 86400000 })
+        if (newLevel === 3) nextFps.push({ amount: 5, expires_at: Date.now() + 7 * 86400000 })
         if (newLevel === 4) {
-          newFp.push({ amount: 5, expires_at: Date.now() + 7 * 86400000 })
-          newStones += 1
+          nextFps.push({ amount: 5, expires_at: Date.now() + 7 * 86400000 })
+          nextStones += 1
         }
         if (newLevel === 5) {
-          newFp.push({ amount: 10, expires_at: Date.now() + 7 * 86400000 })
-          newStones += 2
+          nextFps.push({ amount: 10, expires_at: Date.now() + 7 * 86400000 })
+          nextStones += 2
         }
         setTimeout(() => toast.success(`Parabéns! Você subiu para o Nível ${newLevel}!`), 500)
       }
 
-      return { ...prev, exp: newExp, level: newLevel, fast_passes: newFp, power_stones: newStones }
-    })
-    addTransaction(amount, 'exp', reason)
-  }
-
-  useEffect(() => {
-    const today = new Date().setHours(0, 0, 0, 0)
-    if (wallet.last_checkin < today) {
-      setWallet((prev) => {
-        const level = getLevel(prev.exp)
-        const dailyStones = getDailyStones(level)
-        const validFps = (prev.fast_passes || []).filter((fp) => fp.expires_at > Date.now())
-        const newFp = { amount: 1, expires_at: Date.now() + 7 * 86400000 }
-        return {
-          ...prev,
+      pb.collection('users')
+        .update(user.id, {
           last_checkin: Date.now(),
-          power_stones: dailyStones,
-          fast_passes: [...validFps, newFp],
-        }
-      })
-      addTransaction(1, 'fast_pass', 'Daily Check-in')
-      addExp(10, 'Daily Check-in')
-      toast.success('Check-in Diário! +1 Fast Pass, +10 EXP')
+          power_stones: nextStones,
+          fast_passes: nextFps,
+          exp: newExp,
+          level: newLevel,
+        })
+        .then(() => {
+          addTransaction(1, 'fast_pass', 'Daily Check-in')
+          addTransaction(10, 'exp', 'Daily Check-in')
+          toast.success('Check-in Diário! +1 Fast Pass, +10 EXP')
+        })
+        .catch(console.error)
     }
-  }, [wallet.last_checkin])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, wallet.last_checkin])
 
-  const buyCoins = (amount: number, price: number) => {
-    setWallet((prev) => ({ ...prev, coins: prev.coins + amount }))
-    addTransaction(amount, 'coin', `Compra de Pacote (R$ ${price.toFixed(2)})`)
-    toast.success(`${amount} Coins comprados com sucesso!`)
+  const buyCoins = async (amount: number, price: number) => {
+    if (!user) return
+    try {
+      await pb.collection('users').update(user.id, { coins: wallet.coins + amount })
+      addTransaction(amount, 'coin', `Compra de Pacote (R$ ${price.toFixed(2)})`)
+      toast.success(`${amount} Coins comprados com sucesso!`)
+    } catch (e) {
+      console.error(e)
+      toast.error('Erro ao comprar coins.')
+    }
   }
 
-  const voteNovel = (novelId: string) => {
+  const voteNovel = async (novelId: string) => {
+    if (!user) {
+      toast.error('Faça login para votar.')
+      return false
+    }
     const today = new Date().setHours(0, 0, 0, 0)
     if (wallet.power_stones <= 0) {
       toast.error('Você não tem mais Power Stones hoje.')
@@ -201,65 +254,122 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       return false
     }
 
-    setWallet((prev) => {
-      let extraFp: FastPass[] = []
-      let grantedFp = false
-      if (prev.last_vote_reward < today) {
-        extraFp.push({ amount: 1, expires_at: Date.now() + 7 * 86400000 })
-        grantedFp = true
+    let extraFp: FastPass[] = []
+    let grantedFp = false
+    if (wallet.last_vote_reward < today) {
+      extraFp.push({ amount: 1, expires_at: Date.now() + 7 * 86400000 })
+      grantedFp = true
+    }
+
+    try {
+      const newExp = wallet.exp + 5
+      const oldLevel = getLevel(wallet.exp)
+      const newLevel = getLevel(newExp)
+
+      let nextFps = [
+        ...(wallet.fast_passes || []).filter((fp) => fp.expires_at > Date.now()),
+        ...extraFp,
+      ]
+      let nextStones = wallet.power_stones - 1
+
+      if (newLevel > oldLevel) {
+        if (newLevel === 2) nextFps.push({ amount: 3, expires_at: Date.now() + 7 * 86400000 })
+        if (newLevel === 3) nextFps.push({ amount: 5, expires_at: Date.now() + 7 * 86400000 })
+        if (newLevel === 4) {
+          nextFps.push({ amount: 5, expires_at: Date.now() + 7 * 86400000 })
+          nextStones += 1
+        }
+        if (newLevel === 5) {
+          nextFps.push({ amount: 10, expires_at: Date.now() + 7 * 86400000 })
+          nextStones += 2
+        }
+        setTimeout(() => toast.success(`Parabéns! Você subiu para o Nível ${newLevel}!`), 500)
       }
+
+      await pb.collection('users').update(user.id, {
+        power_stones: nextStones,
+        last_vote_reward: grantedFp ? Date.now() : wallet.last_vote_reward,
+        fast_passes: nextFps,
+        exp: newExp,
+        level: newLevel,
+      })
 
       if (grantedFp) {
         setTimeout(() => toast.success('Voto registrado! +1 Fast Pass, +5 EXP'), 100)
+        addTransaction(1, 'fast_pass', 'Recompensa de Voto')
       } else {
         setTimeout(() => toast.success('Voto registrado! +5 EXP'), 100)
       }
 
-      return {
-        ...prev,
-        power_stones: prev.power_stones - 1,
-        last_vote_reward: grantedFp ? Date.now() : prev.last_vote_reward,
-        fast_passes: [
-          ...(prev.fast_passes || []).filter((fp) => fp.expires_at > Date.now()),
-          ...extraFp,
-        ],
-      }
-    })
+      setVotes((prev) => [{ novel_id: novelId, voted_at: Date.now() }, ...prev])
+      addTransaction(5, 'exp', 'Voto com Power Stone')
 
-    if (wallet.last_vote_reward < today) {
-      addTransaction(1, 'fast_pass', 'Recompensa de Voto')
+      pb.send('/backend/v1/vote', {
+        method: 'POST',
+        body: JSON.stringify({ novel_id: novelId }),
+      }).catch(console.error)
+
+      return true
+    } catch (e) {
+      console.error(e)
+      toast.error('Erro ao registrar voto.')
+      return false
     }
-
-    setVotes((prev) => [{ novel_id: novelId, voted_at: Date.now() }, ...prev])
-    addExp(5, 'Voto com Power Stone')
-    sendVoteToBackend(novelId).catch(console.error)
-    return true
   }
 
-  const unlockChapter = (chapterId: string, method: 'coin' | 'fast_pass', cost: number) => {
-    if (method === 'fast_pass') {
-      let activeFps = (wallet.fast_passes || []).filter((fp) => fp.expires_at > Date.now())
-      const total = activeFps.reduce((a, b) => a + b.amount, 0)
-      if (total < 1) return false
+  const unlockChapter = async (chapterId: string, method: 'coin' | 'fast_pass', cost: number) => {
+    if (!user) return false
 
-      activeFps.sort((a, b) => a.expires_at - b.expires_at)
-      activeFps[0].amount -= 1
-      const newFp = activeFps.filter((fp) => fp.amount > 0)
+    try {
+      await pb.send('/backend/v1/unlock-chapter', {
+        method: 'POST',
+        body: JSON.stringify({ chapter_id: chapterId, method }),
+      })
 
-      setWallet((prev) => ({ ...prev, fast_passes: newFp }))
-      addTransaction(-1, 'fast_pass', `Desbloqueio: Cap ${chapterId}`)
-    } else {
-      if (wallet.coins < cost) return false
-      setWallet((prev) => ({ ...prev, coins: prev.coins - cost }))
-      addTransaction(-cost, 'coin', `Desbloqueio: Cap ${chapterId}`)
-      addExp(3, 'Desbloqueio com Coins')
+      if (method === 'fast_pass') {
+        addTransaction(-1, 'fast_pass', `Desbloqueio: Cap ${chapterId}`)
+      } else {
+        addTransaction(-cost, 'coin', `Desbloqueio: Cap ${chapterId}`)
+
+        const newExp = wallet.exp + 3
+        const oldLevel = getLevel(wallet.exp)
+        const newLevel = getLevel(newExp)
+
+        let updates: any = { exp: newExp, level: newLevel }
+
+        if (newLevel > oldLevel) {
+          let nextFps = [...(wallet.fast_passes || []).filter((fp) => fp.expires_at > Date.now())]
+          let nextStones = wallet.power_stones
+
+          if (newLevel === 2) nextFps.push({ amount: 3, expires_at: Date.now() + 7 * 86400000 })
+          if (newLevel === 3) nextFps.push({ amount: 5, expires_at: Date.now() + 7 * 86400000 })
+          if (newLevel === 4) {
+            nextFps.push({ amount: 5, expires_at: Date.now() + 7 * 86400000 })
+            nextStones += 1
+          }
+          if (newLevel === 5) {
+            nextFps.push({ amount: 10, expires_at: Date.now() + 7 * 86400000 })
+            nextStones += 2
+          }
+          updates.fast_passes = nextFps
+          updates.power_stones = nextStones
+          setTimeout(() => toast.success(`Parabéns! Você subiu para o Nível ${newLevel}!`), 500)
+        }
+        await pb.collection('users').update(user.id, updates)
+        addTransaction(3, 'exp', 'Desbloqueio com Coins')
+      }
+
+      setUnlockedChapters((prev) => [
+        ...prev,
+        { chapter_id: chapterId, unlocked_at: Date.now(), method },
+      ])
+
+      await pb.collection('users').authRefresh()
+      return true
+    } catch (err: any) {
+      console.error(err)
+      return false
     }
-
-    setUnlockedChapters((prev) => [
-      ...prev,
-      { chapter_id: chapterId, unlocked_at: Date.now(), method },
-    ])
-    return true
   }
 
   const isChapterUnlocked = (chapterId: string) => {

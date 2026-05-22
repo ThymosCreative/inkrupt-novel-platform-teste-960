@@ -27,13 +27,14 @@ export default function Reader() {
   const { id, num } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { wallet, votes, voteNovel, unlockChapter, isChapterUnlocked } = useWallet()
+  const { wallet, votes, voteNovel, unlockChapter } = useWallet()
   const chapterNum = parseInt(num || '1', 10)
 
   const [novel, setNovel] = useState<any>(null)
   const [chapter, setChapter] = useState<any>(null)
   const [totalChapters, setTotalChapters] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [isUnlockedLocal, setIsUnlockedLocal] = useState(false)
 
   const [progress, setProgress] = useState(0)
   const [settings, setSettings] = useState({
@@ -64,10 +65,30 @@ export default function Reader() {
     if (id && num) {
       setLoading(true)
       Promise.all([getNovel(id), getChapterByNum(id, chapterNum), getChapters(id)])
-        .then(([n, c, clist]) => {
+        .then(async ([n, c, clist]) => {
           setNovel(n)
           setChapter(c)
           setTotalChapters(clist.length)
+
+          if (user && c) {
+            if (n.author === user.id) {
+              setIsUnlockedLocal(true)
+            } else if (!c.is_premium) {
+              setIsUnlockedLocal(true)
+            } else {
+              try {
+                await pb
+                  .collection('unlocked_chapters')
+                  .getFirstListItem(`user="${user.id}" && chapter="${c.id}"`)
+                setIsUnlockedLocal(true)
+              } catch {
+                setIsUnlockedLocal(false)
+              }
+            }
+          } else {
+            setIsUnlockedLocal(!c?.is_premium)
+          }
+
           setLoading(false)
           window.scrollTo(0, 0)
 
@@ -95,7 +116,7 @@ export default function Reader() {
           setLoading(false)
         })
     }
-  }, [id, num, user])
+  }, [id, num, user?.id])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -281,16 +302,17 @@ export default function Reader() {
 
         {(() => {
           const isAuthor = user && novel?.author === user.id
-          const isLocked = !isAuthor && chapter.is_premium && !isChapterUnlocked(chapter.id)
+          const isLocked = !isAuthor && chapter.is_premium && !isUnlockedLocal
           const { type, cost } = getChapterCost(chapter)
 
-          const handleLocalUnlock = (method: 'coin' | 'fast_pass') => {
+          const handleLocalUnlock = async (method: 'coin' | 'fast_pass') => {
             if (!user) {
               toast.error('Faça login para desbloquear.')
               return
             }
-            const success = unlockChapter(chapter.id, method, cost)
+            const success = await unlockChapter(chapter.id, method, cost)
             if (success) {
+              setIsUnlockedLocal(true)
               toast.success('Capítulo desbloqueado!')
             } else {
               toast.error(method === 'coin' ? 'Coins insuficientes.' : 'Fast Passes insuficientes.')

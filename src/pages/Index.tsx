@@ -27,10 +27,18 @@ export default function Index() {
   const [hiddenGems, setHiddenGems] = useState<any[]>([])
 
   useEffect(() => {
-    getNovels({ sort: '-last_updated_at' }).then((res) => setRecentNovels(res.items))
-    getHotNovels().then((res) => setHotNovels(res.items))
-    getTrendingNovels().then((res) => setTrendingNovels(res.items))
-    getHiddenGems().then((res) => setHiddenGems(res.items))
+    getNovels({ sort: '-last_updated_at' })
+      .then((res) => setRecentNovels(res.items || []))
+      .catch(() => setRecentNovels([]))
+    getHotNovels()
+      .then((res) => setHotNovels(res.items || []))
+      .catch(() => setHotNovels([]))
+    getTrendingNovels()
+      .then((res) => setTrendingNovels(res.items || []))
+      .catch(() => setTrendingNovels([]))
+    getHiddenGems()
+      .then((res) => setHiddenGems(res.items || []))
+      .catch(() => setHiddenGems([]))
   }, [])
 
   const originals = recentNovels.filter((n) => n.type === 'Original').slice(0, 4)

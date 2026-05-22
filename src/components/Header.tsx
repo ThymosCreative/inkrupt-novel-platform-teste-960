@@ -437,14 +437,14 @@ export function Header() {
                   className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-zinc-400 hover:text-zinc-200 rounded-full text-sm transition-colors"
                 >
                   <Coins className="w-4 h-4" />
-                  {wallet.coins}
+                  {wallet?.coins || 0}
                 </Link>
                 <Link
                   to="/store"
                   className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-zinc-400 hover:text-zinc-200 rounded-full text-sm transition-colors"
                 >
                   <Zap className="w-4 h-4" />
-                  {totalFastPasses}
+                  {totalFastPasses || 0}
                 </Link>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -565,13 +565,13 @@ export function Header() {
                         to="/store"
                         className="flex items-center gap-2 text-amber-500 p-2 rounded-md hover:bg-amber-500/10"
                       >
-                        <Coins className="w-4 h-4" /> {wallet.coins} Coins
+                        <Coins className="w-4 h-4" /> {wallet?.coins || 0} Coins
                       </Link>
                       <Link
                         to="/store"
                         className="flex items-center gap-2 text-blue-500 p-2 rounded-md hover:bg-blue-500/10"
                       >
-                        <Zap className="w-4 h-4" /> {totalFastPasses} Fast Passes
+                        <Zap className="w-4 h-4" /> {totalFastPasses || 0} Fast Passes
                       </Link>
                     </div>
                     <DropdownMenuSeparator />

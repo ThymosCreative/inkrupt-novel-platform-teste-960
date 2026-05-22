@@ -76,23 +76,43 @@ const defaultWallet: Wallet = {
 
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [wallet, setWallet] = useState<Wallet>(() => {
-    const saved = localStorage.getItem('inkrupt_wallet')
-    return saved ? JSON.parse(saved) : defaultWallet
+    try {
+      const saved = localStorage.getItem('inkrupt_wallet')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        return { ...defaultWallet, ...parsed, fast_passes: parsed.fast_passes || [] }
+      }
+    } catch {
+      // ignore
+    }
+    return defaultWallet
   })
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem('inkrupt_transactions')
-    return saved ? JSON.parse(saved) : []
+    try {
+      const saved = localStorage.getItem('inkrupt_transactions')
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
   })
 
   const [unlockedChapters, setUnlockedChapters] = useState<UnlockedChapter[]>(() => {
-    const saved = localStorage.getItem('inkrupt_unlocked')
-    return saved ? JSON.parse(saved) : []
+    try {
+      const saved = localStorage.getItem('inkrupt_unlocked')
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
   })
 
   const [votes, setVotes] = useState<Vote[]>(() => {
-    const saved = localStorage.getItem('inkrupt_votes')
-    return saved ? JSON.parse(saved) : []
+    try {
+      const saved = localStorage.getItem('inkrupt_votes')
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
   })
 
   useEffect(() => {
@@ -121,7 +141,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       const oldLevel = getLevel(prev.exp)
       const newLevel = getLevel(newExp)
 
-      let newFp = [...prev.fast_passes.filter((fp) => fp.expires_at > Date.now())]
+      let newFp = [...(prev.fast_passes || []).filter((fp) => fp.expires_at > Date.now())]
       let newStones = prev.power_stones
 
       if (newLevel > oldLevel) {
@@ -149,7 +169,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       setWallet((prev) => {
         const level = getLevel(prev.exp)
         const dailyStones = getDailyStones(level)
-        const validFps = prev.fast_passes.filter((fp) => fp.expires_at > Date.now())
+        const validFps = (prev.fast_passes || []).filter((fp) => fp.expires_at > Date.now())
         const newFp = { amount: 1, expires_at: Date.now() + 7 * 86400000 }
         return {
           ...prev,
@@ -199,7 +219,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         ...prev,
         power_stones: prev.power_stones - 1,
         last_vote_reward: grantedFp ? Date.now() : prev.last_vote_reward,
-        fast_passes: [...prev.fast_passes.filter((fp) => fp.expires_at > Date.now()), ...extraFp],
+        fast_passes: [
+          ...(prev.fast_passes || []).filter((fp) => fp.expires_at > Date.now()),
+          ...extraFp,
+        ],
       }
     })
 
@@ -215,7 +238,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   const unlockChapter = (chapterId: string, method: 'coin' | 'fast_pass', cost: number) => {
     if (method === 'fast_pass') {
-      let activeFps = wallet.fast_passes.filter((fp) => fp.expires_at > Date.now())
+      let activeFps = (wallet.fast_passes || []).filter((fp) => fp.expires_at > Date.now())
       const total = activeFps.reduce((a, b) => a + b.amount, 0)
       if (total < 1) return false
 
@@ -243,7 +266,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     return unlockedChapters.some((c) => c.chapter_id === chapterId)
   }
 
-  const totalFastPasses = wallet.fast_passes
+  const totalFastPasses = (wallet.fast_passes || [])
     .filter((fp) => fp.expires_at > Date.now())
     .reduce((a, b) => a + b.amount, 0)
 

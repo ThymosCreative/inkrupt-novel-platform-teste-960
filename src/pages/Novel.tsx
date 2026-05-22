@@ -13,6 +13,7 @@ import {
   followAuthor,
   unfollowAuthor,
   getAuthorFollowerCount,
+  getChapterCost,
 } from '@/services/api'
 import pb from '@/lib/pocketbase/client'
 import { formatDistanceToNow } from 'date-fns'
@@ -57,7 +58,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AddToListDialog } from '@/components/AddToListDialog'
 import { useWallet } from '@/hooks/use-wallet'
-import { getChapterCost } from '@/lib/utils'
 
 export default function Novel() {
   const { id } = useParams()
@@ -83,6 +83,7 @@ export default function Novel() {
   const [isFollowing, setIsFollowing] = useState(false)
   const [followRecordId, setFollowRecordId] = useState<string | null>(null)
   const [followerCount, setFollowerCount] = useState(0)
+  const [selectedChapter, setSelectedChapter] = useState<any>(null)
 
   const loadLibraryEntry = async (novelId: string) => {
     if (!user) return
@@ -562,7 +563,7 @@ export default function Novel() {
               <Button
                 onClick={handleVote}
                 className={`w-full sm:w-auto h-12 rounded-xl px-6 font-bold ${
-                  votes.some(
+                  (votes || []).some(
                     (v: any) =>
                       v.novel_id === novel.id && v.voted_at > new Date().setHours(0, 0, 0, 0),
                   )
@@ -570,7 +571,7 @@ export default function Novel() {
                     : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                 }`}
               >
-                <Zap className="w-5 h-5 mr-2" /> Votar ({wallet.power_stones})
+                <Zap className="w-5 h-5 mr-2" /> Votar ({wallet?.power_stones || 0})
               </Button>
             </div>
           </div>{' '}
@@ -646,8 +647,9 @@ export default function Novel() {
                 </div>
                 <div className="divide-y divide-zinc-900/50 max-h-[500px] overflow-y-auto">
                   {chapters.map((chap) => {
+                    const { type, cost } = getChapterCost(chap)
                     const isLocked =
-                      chap.is_premium && !isChapterUnlocked(chap.id) && user?.id !== novel.author
+                      type !== 'free' && !isChapterUnlocked(chap.id) && user?.id !== novel.author
                     return (
                       <div
                         key={chap.id}
@@ -671,7 +673,6 @@ export default function Novel() {
                         </div>
                         <div className="flex items-center gap-3 text-zinc-500 text-sm">
                           {(() => {
-                            const { type, cost } = getChapterCost(chap)
                             if (type === 'privilege')
                               return (
                                 <div className="flex items-center gap-2">
@@ -971,11 +972,11 @@ export default function Novel() {
           {selectedChapter &&
             (() => {
               const { type, cost } = getChapterCost(selectedChapter)
-              const activeFps = wallet.fast_passes.reduce(
+              const activeFps = (wallet?.fast_passes || []).reduce(
                 (a, b) => a + (b.expires_at > Date.now() ? b.amount : 0),
                 0,
               )
-              const canUseCoin = wallet.coins >= cost
+              const canUseCoin = (wallet?.coins || 0) >= cost
               const canUseFp = type === 'premium' && activeFps >= 1
 
               const handleUnlock = (method: 'coin' | 'fast_pass') => {
@@ -1000,7 +1001,7 @@ export default function Novel() {
                     <div className="flex justify-center items-center gap-4 text-sm text-zinc-400 mb-6">
                       <div className="flex flex-col items-center">
                         <span className="font-bold text-amber-500 flex items-center gap-1">
-                          <Coins className="w-4 h-4" /> {wallet.coins}
+                          <Coins className="w-4 h-4" /> {wallet?.coins || 0}
                         </span>
                         <span className="text-[10px] uppercase">Seus Coins</span>
                       </div>

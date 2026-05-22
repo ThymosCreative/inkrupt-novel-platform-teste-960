@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-22T01:52:22.366Z",
+  "generatedAt": "2026-05-22T02:02:20.194Z",
   "collections": [
     {
       "name": "users",
@@ -272,6 +272,13 @@
           "type": "number",
           "required": false,
           "system": false
+        },
+        {
+          "name": "type",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["free", "premium", "privilege"]
         }
       ],
       "indexes": ["CREATE INDEX idx_chapters_novel_num ON chapters (novel, chapter_number)"]

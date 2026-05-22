@@ -31,6 +31,23 @@ export const getTrendingNovels = async () => {
   })
 }
 
+export const getChapterCost = (chapter: any) => {
+  if (!chapter) return { type: 'free', cost: 0 }
+
+  let type = chapter.type
+  if (!type) {
+    type = chapter.is_premium ? 'premium' : 'free'
+  }
+
+  let cost = chapter.coin_price || 0
+  if (type !== 'free' && !cost) {
+    const wordCount = chapter.content ? chapter.content.split(/\s+/).length : 0
+    cost = Math.max(1, Math.ceil(wordCount / 200))
+  }
+
+  return { type, cost }
+}
+
 export const getHiddenGems = async () => {
   return pb.collection('novels').getList(1, 6, {
     filter: 'rating >= 4.0 && reads < 1000',

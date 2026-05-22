@@ -126,6 +126,13 @@ export const deleteNovelDiscussion = async (id: string) => {
   return pb.collection('novel_discussions').delete(id)
 }
 
+export const getAuthorFollowerCount = async (authorId: string) => {
+  const result = await pb.collection('author_follows').getList(1, 1, {
+    filter: `author="${authorId}"`,
+  })
+  return result.totalItems
+}
+
 export const checkIsFollowing = async (followerId: string, authorId: string) => {
   try {
     return await pb

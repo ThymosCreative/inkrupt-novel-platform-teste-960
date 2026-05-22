@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-22T00:58:52.873Z",
+  "generatedAt": "2026-05-22T01:22:42.888Z",
   "collections": [
     {
       "name": "users",
@@ -616,8 +616,8 @@
       "name": "author_follows",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != ''",
-        "view": "@request.auth.id != ''",
+        "list": "",
+        "view": "",
         "create": "@request.auth.id != '' && follower = @request.auth.id",
         "update": "@request.auth.id != '' && follower = @request.auth.id",
         "delete": "@request.auth.id != '' && follower = @request.auth.id"

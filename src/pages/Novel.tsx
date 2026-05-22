@@ -12,8 +12,10 @@ import {
   checkIsFollowing,
   followAuthor,
   unfollowAuthor,
+  getAuthorFollowerCount,
 } from '@/services/api'
 import pb from '@/lib/pocketbase/client'
+import { formatDistanceToNow } from 'date-fns'
 import { useAuth } from '@/hooks/use-auth'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -74,6 +76,7 @@ export default function Novel() {
   const [isPostingDiscussion, setIsPostingDiscussion] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false)
   const [followRecordId, setFollowRecordId] = useState<string | null>(null)
+  const [followerCount, setFollowerCount] = useState(0)
 
   const loadLibraryEntry = async (novelId: string) => {
     if (!user) return
@@ -99,14 +102,18 @@ export default function Novel() {
           setReviews(r)
           setDiscussions(d)
 
-          if (user && n.expand?.author) {
-            const followRes = await checkIsFollowing(user.id, n.expand.author.id)
-            if (followRes) {
-              setIsFollowing(true)
-              setFollowRecordId(followRes.id)
-            } else {
-              setIsFollowing(false)
-              setFollowRecordId(null)
+          if (n.expand?.author) {
+            getAuthorFollowerCount(n.expand.author.id).then(setFollowerCount).catch(console.error)
+
+            if (user) {
+              const followRes = await checkIsFollowing(user.id, n.expand.author.id)
+              if (followRes) {
+                setIsFollowing(true)
+                setFollowRecordId(followRes.id)
+              } else {
+                setIsFollowing(false)
+                setFollowRecordId(null)
+              }
             }
           }
 
@@ -153,6 +160,16 @@ export default function Novel() {
     !!novel,
   )
 
+  useRealtime(
+    'author_follows',
+    (e) => {
+      if (novel?.expand?.author && e.record.author === novel.expand.author.id) {
+        getAuthorFollowerCount(novel.expand.author.id).then(setFollowerCount).catch(console.error)
+      }
+    },
+    !!novel?.expand?.author,
+  )
+
   const handleUpdateLibrary = async (status: string) => {
     if (!user) {
       setIsAuthOpen(true)
@@ -189,11 +206,13 @@ export default function Novel() {
         await unfollowAuthor(followRecordId)
         setIsFollowing(false)
         setFollowRecordId(null)
+        setFollowerCount((prev) => Math.max(0, prev - 1))
         toast.success('Deixou de seguir o autor.')
       } else {
         const res = await followAuthor(user.id, novel.expand.author.id)
         setIsFollowing(true)
         setFollowRecordId(res.id)
+        setFollowerCount((prev) => prev + 1)
         toast.success('Seguindo o autor!')
       }
     } catch (e) {
@@ -380,15 +399,22 @@ export default function Novel() {
                   </Badge>
                 )}
               </div>
-              {novel.expand?.author && user?.id !== novel.expand.author.id && (
-                <Button
-                  onClick={handleFollowToggle}
-                  variant={isFollowing ? 'outline' : 'default'}
-                  size="sm"
-                  className={`h-7 px-3 rounded-full text-xs ${!isFollowing ? 'bg-lime-400 text-black hover:bg-lime-500 font-bold' : 'border-lime-400 text-lime-400 hover:bg-lime-400/10'}`}
-                >
-                  {isFollowing ? 'Seguindo' : 'Seguir'}
-                </Button>
+              {novel.expand?.author && (
+                <div className="flex items-center gap-3">
+                  {user?.id !== novel.expand.author.id && (
+                    <Button
+                      onClick={handleFollowToggle}
+                      variant={isFollowing ? 'outline' : 'default'}
+                      size="sm"
+                      className={`h-7 px-3 rounded-full text-xs ${!isFollowing ? 'bg-lime-400 text-black hover:bg-lime-500 font-bold' : 'border-lime-400 text-lime-400 hover:bg-lime-400/10'}`}
+                    >
+                      {isFollowing ? 'Seguindo' : 'Seguir'}
+                    </Button>
+                  )}
+                  <span className="text-sm font-medium text-zinc-400">
+                    {followerCount} {followerCount === 1 ? 'seguidor' : 'seguidores'}
+                  </span>
+                </div>
               )}
             </div>
 
@@ -694,11 +720,7 @@ export default function Novel() {
                             )}
                           </div>
                           <span className="text-xs text-zinc-500">
-                            {new Date(disc.created).toLocaleDateString()} às{' '}
-                            {new Date(disc.created).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
+                            {formatDistanceToNow(new Date(disc.created), { addSuffix: true })}
                           </span>
                         </div>
                       </div>

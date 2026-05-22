@@ -54,7 +54,9 @@ import {
   ListPlus,
   Coins,
   Zap,
+  Share2,
 } from 'lucide-react'
+import { captureElementAsDataURL } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AddToListDialog } from '@/components/AddToListDialog'
@@ -85,6 +87,7 @@ export default function Novel() {
   const [followRecordId, setFollowRecordId] = useState<string | null>(null)
   const [followerCount, setFollowerCount] = useState(0)
   const [selectedChapter, setSelectedChapter] = useState<any>(null)
+  const [isCapturing, setIsCapturing] = useState(false)
 
   const loadLibraryEntry = async (novelId: string) => {
     if (!user) return
@@ -385,6 +388,25 @@ export default function Novel() {
     voteNovel(novel.id)
   }
 
+  const handleShare = async () => {
+    const el = document.getElementById('novel-info-card')
+    if (!el) return
+    setIsCapturing(true)
+    try {
+      const dataUrl = await captureElementAsDataURL(el)
+      const a = document.createElement('a')
+      a.href = dataUrl
+      a.download = `share-${novel.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.svg`
+      a.click()
+      toast.success('Imagem gerada com sucesso!')
+    } catch (error) {
+      console.error(error)
+      toast.error('Erro ao gerar imagem.')
+    } finally {
+      setIsCapturing(false)
+    }
+  }
+
   const coverUrl = getCoverUrl(novel)
 
   return (
@@ -398,7 +420,10 @@ export default function Novel() {
       </div>
 
       <div className="container mx-auto px-4 -mt-32 relative z-10">
-        <div className="flex flex-col md:flex-row gap-8 items-start">
+        <div
+          id="novel-info-card"
+          className="flex flex-col md:flex-row gap-8 items-start bg-zinc-950/40 p-4 md:p-8 rounded-3xl backdrop-blur-sm border border-white/5 shadow-2xl"
+        >
           <div className="shrink-0 mx-auto md:mx-0">
             <img
               src={coverUrl}
@@ -592,6 +617,18 @@ export default function Novel() {
                 }`}
               >
                 <Zap className="w-5 h-5 mr-2" /> Votar ({wallet?.power_stones || 0})
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto border-zinc-700 bg-zinc-900/50 hover:bg-zinc-800 text-white h-12 rounded-xl text-base px-4"
+                onClick={handleShare}
+                disabled={isCapturing}
+              >
+                {isCapturing ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Share2 className="w-5 h-5" />
+                )}
               </Button>
             </div>
           </div>{' '}

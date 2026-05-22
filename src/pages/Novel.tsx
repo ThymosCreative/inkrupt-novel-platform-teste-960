@@ -53,6 +53,7 @@ export default function Novel() {
   const [reviewContent, setReviewContent] = useState('')
   const [reviewRating, setReviewRating] = useState(0)
   const [isSubmittingReview, setIsSubmittingReview] = useState(false)
+  const [reviewErrors, setReviewErrors] = useState<{ rating?: string; content?: string }>({})
 
   const loadLibraryEntry = async (novelId: string) => {
     if (!user) return
@@ -152,6 +153,7 @@ export default function Novel() {
       setIsAuthOpen(true)
       return
     }
+    setReviewErrors({})
     if (userReview) {
       setReviewContent(userReview.content || '')
       setReviewRating(userReview.rating || 0)
@@ -163,10 +165,19 @@ export default function Novel() {
   }
 
   const handleSubmitReview = async () => {
+    const errors: { rating?: string; content?: string } = {}
     if (reviewRating < 1 || reviewRating > 5) {
-      toast.error('Por favor, selecione uma nota de 1 a 5.')
+      errors.rating = 'Please select a rating between 1 and 5 stars.'
+    }
+    if (!reviewContent.trim()) {
+      errors.content = 'Review content is required.'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setReviewErrors(errors)
       return
     }
+    setReviewErrors({})
     setIsSubmittingReview(true)
     try {
       if (userReview) {
@@ -182,7 +193,7 @@ export default function Novel() {
           rating: reviewRating,
           content: reviewContent,
         })
-        toast.success('Review enviada com sucesso!')
+        toast.success('Review submitted successfully!')
       }
       setIsReviewOpen(false)
     } catch (e) {
@@ -302,7 +313,9 @@ export default function Novel() {
                   }
                 >
                   <Button className="w-full sm:w-auto bg-lime-400 text-black hover:bg-lime-500 font-bold px-8 h-12 rounded-xl text-base">
-                    {libraryEntry?.expand?.last_chapter ? 'Continuar Lendo' : 'Ler Agora'}
+                    {libraryEntry?.expand?.last_chapter
+                      ? `Resume: Chapter ${libraryEntry.expand.last_chapter.chapter_number}`
+                      : 'Ler Agora'}
                   </Button>
                 </Link>
               ) : (
@@ -520,13 +533,16 @@ export default function Novel() {
                           </div>
                         </div>
                       </div>
+                      <span className="text-xs text-zinc-500">
+                        {new Date(rev.created).toLocaleDateString()}
+                      </span>
                     </div>
                     <p className="text-zinc-400 text-sm leading-relaxed">{rev.content}</p>
                   </div>
                 ))}
                 {reviews.length === 0 && (
                   <div className="text-center text-zinc-500 py-8">
-                    Nenhuma review ainda. Seja o primeiro!
+                    No reviews yet. Be the first to share your thoughts!
                   </div>
                 )}
               </div>
@@ -549,7 +565,11 @@ export default function Novel() {
                   <button
                     key={star}
                     type="button"
-                    onClick={() => setReviewRating(star)}
+                    onClick={() => {
+                      setReviewRating(star)
+                      if (reviewErrors.rating)
+                        setReviewErrors({ ...reviewErrors, rating: undefined })
+                    }}
                     className="focus:outline-none transition-transform hover:scale-110"
                   >
                     <Star
@@ -560,15 +580,22 @@ export default function Novel() {
                   </button>
                 ))}
               </div>
+              {reviewErrors.rating && <p className="text-sm text-red-500">{reviewErrors.rating}</p>}
             </div>
             <div className="space-y-2">
               <label className="text-sm text-zinc-400">O que você achou da obra?</label>
               <Textarea
                 placeholder="Escreva sua review aqui..."
                 value={reviewContent}
-                onChange={(e) => setReviewContent(e.target.value)}
-                className="min-h-[120px] bg-zinc-900 border-zinc-800 focus-visible:ring-lime-400 resize-none"
+                onChange={(e) => {
+                  setReviewContent(e.target.value)
+                  if (reviewErrors.content) setReviewErrors({ ...reviewErrors, content: undefined })
+                }}
+                className={`min-h-[120px] bg-zinc-900 border-zinc-800 focus-visible:ring-lime-400 resize-none ${reviewErrors.content ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
               />
+              {reviewErrors.content && (
+                <p className="text-sm text-red-500">{reviewErrors.content}</p>
+              )}
             </div>
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -594,7 +621,7 @@ export default function Novel() {
             <Button
               type="button"
               onClick={handleSubmitReview}
-              disabled={isSubmittingReview || reviewRating === 0}
+              disabled={isSubmittingReview}
               className="w-full sm:w-auto bg-lime-400 text-black hover:bg-lime-500 font-bold"
             >
               {isSubmittingReview && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

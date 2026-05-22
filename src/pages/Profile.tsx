@@ -55,6 +55,11 @@ export default function Profile() {
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false)
   const [followRecordId, setFollowRecordId] = useState<string | null>(null)
+  const [authorApplication, setAuthorApplication] = useState<any>(null)
+  const [isApplyOpen, setIsApplyOpen] = useState(false)
+  const [applyBio, setApplyBio] = useState('')
+  const [applyPortfolio, setApplyPortfolio] = useState('')
+  const [isApplying, setIsApplying] = useState(false)
 
   const isOwnProfile = !id || (user && id === user.id)
 
@@ -97,7 +102,7 @@ export default function Profile() {
         const u = await pb.collection('users').getOne(targetId)
         setProfileUser(u)
 
-        const [libRes, novelsRes, listsRes, followRes] = await Promise.all([
+        const [libRes, novelsRes, listsRes, followRes, appRes] = await Promise.all([
           pb
             .collection('library_entries')
             .getFullList({ filter: `user = "${targetId}"`, expand: 'novel,last_chapter' }),
@@ -112,11 +117,15 @@ export default function Profile() {
                 .getList(1, 1, { filter: `follower="${user.id}" && author="${targetId}"` })
                 .catch(() => null)
             : Promise.resolve(null),
+          (!id || id === user?.id) && user && !user.is_author
+            ? getAuthorApplication(user.id)
+            : Promise.resolve(null),
         ])
 
         setLibrary(libRes)
         setAuthoredNovels(novelsRes)
         setReadingLists(listsRes)
+        if (appRes) setAuthorApplication(appRes)
 
         if (followRes && followRes.items.length > 0) {
           setIsFollowing(true)
@@ -135,6 +144,25 @@ export default function Profile() {
   const handleSignOut = () => {
     signOut()
     navigate('/')
+  }
+
+  const handleApplySubmit = async () => {
+    if (!applyBio.trim()) {
+      toast.error('A biografia é obrigatória.')
+      return
+    }
+    if (!user) return
+    setIsApplying(true)
+    try {
+      const app = await createAuthorApplication(user.id, applyBio, applyPortfolio)
+      setAuthorApplication(app)
+      setIsApplyOpen(false)
+      toast.success('Aplicação enviada com sucesso!')
+    } catch (e) {
+      toast.error('Erro ao enviar aplicação.')
+    } finally {
+      setIsApplying(false)
+    }
   }
 
   const handleFollowToggle = async () => {
@@ -227,7 +255,23 @@ export default function Profile() {
             )}
           </div>
           {isOwnProfile && (
-            <div className="flex gap-3 shrink-0">
+            <div className="flex gap-3 shrink-0 flex-wrap justify-center md:justify-end">
+              {!profileUser.is_author &&
+                (authorApplication ? (
+                  <Badge
+                    variant="outline"
+                    className="h-10 px-4 rounded-xl bg-amber-500/10 text-amber-500 border-amber-500 flex items-center justify-center"
+                  >
+                    Aplicação Pendente
+                  </Badge>
+                ) : (
+                  <Button
+                    onClick={() => setIsApplyOpen(true)}
+                    className="h-10 bg-lime-400 text-black hover:bg-lime-500 rounded-xl font-bold"
+                  >
+                    Tornar-se Autor
+                  </Button>
+                ))}
               <Button
                 variant="outline"
                 className="rounded-xl"
@@ -446,6 +490,53 @@ export default function Profile() {
         </Tabs>
       </div>
       <AuthModal isOpen={isAuthOpen} onOpenChange={setIsAuthOpen} />
+
+      <Dialog open={isApplyOpen} onOpenChange={setIsApplyOpen}>
+        <DialogContent className="sm:max-w-md bg-zinc-950 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Tornar-se Autor</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-400">Biografia / Motivação</label>
+              <Textarea
+                value={applyBio}
+                onChange={(e) => setApplyBio(e.target.value)}
+                placeholder="Conte-nos por que você quer ser um autor..."
+                className="bg-zinc-900 border-zinc-800 text-white focus-visible:ring-lime-400 min-h-[100px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-400">
+                Link do Portfólio (Opcional)
+              </label>
+              <Input
+                value={applyPortfolio}
+                onChange={(e) => setApplyPortfolio(e.target.value)}
+                placeholder="https://..."
+                className="bg-zinc-900 border-zinc-800 text-white focus-visible:ring-lime-400"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setIsApplyOpen(false)}
+              className="hover:bg-zinc-800 hover:text-white"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleApplySubmit}
+              disabled={isApplying}
+              className="bg-lime-400 text-black hover:bg-lime-500 font-bold"
+            >
+              {isApplying && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Enviar Aplicação
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

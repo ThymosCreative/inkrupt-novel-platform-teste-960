@@ -150,3 +150,24 @@ export const followAuthor = async (followerId: string, authorId: string) => {
 export const unfollowAuthor = async (id: string) => {
   return pb.collection('author_follows').delete(id)
 }
+
+export const getAuthorApplication = async (userId: string) => {
+  try {
+    return await pb.collection('author_applications').getFirstListItem(`user="${userId}"`)
+  } catch {
+    return null
+  }
+}
+
+export const createAuthorApplication = async (
+  userId: string,
+  bio: string,
+  portfolio_link?: string,
+) => {
+  return pb.collection('author_applications').create({
+    user: userId,
+    bio,
+    portfolio_link,
+    status: 'pending',
+  })
+}

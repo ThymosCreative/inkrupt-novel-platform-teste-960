@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-22T01:22:42.888Z",
+  "generatedAt": "2026-05-22T01:26:53.862Z",
   "collections": [
     {
       "name": "users",
@@ -655,6 +655,60 @@
       "indexes": [
         "CREATE UNIQUE INDEX idx_author_follows_unique ON author_follows (follower, author)"
       ]
+    },
+    {
+      "name": "author_applications",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && user = @request.auth.id",
+        "view": "@request.auth.id != '' && user = @request.auth.id",
+        "create": "@request.auth.id != '' && @request.auth.is_author = false",
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "user",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "bio",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "portfolio_link",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["pending", "approved", "rejected"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_author_applications_user ON author_applications (user)"]
     }
   ]
 }

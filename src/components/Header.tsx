@@ -9,6 +9,9 @@ import {
   LogOut,
   Clock,
   BookOpen,
+  Sun,
+  Moon,
+  LayoutDashboard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -27,6 +30,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { searchNovels, getCoverUrl } from '@/services/api'
 import pb from '@/lib/pocketbase/client'
 import { useRealtime } from '@/hooks/use-realtime'
+import { useTheme } from '@/components/ThemeProvider'
 
 function timeAgo(dateString: string) {
   const date = new Date(dateString)
@@ -58,6 +62,7 @@ const saveHistory = (q: string) => {
 export function Header() {
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const { user, isAuthenticated, signOut } = useAuth()
+  const { theme, setTheme } = useTheme()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -242,12 +247,12 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-black/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link
               to="/"
-              className="text-2xl font-black tracking-tighter text-white hover:text-lime-400 transition-colors"
+              className="text-2xl font-black tracking-tighter text-foreground hover:text-primary transition-colors"
             >
               INKRUPT.
             </Link>
@@ -257,13 +262,13 @@ export function Header() {
                   key={link.path}
                   to={link.path}
                   className={cn(
-                    'text-sm font-medium transition-colors hover:text-lime-400 flex items-center gap-1.5',
-                    location.pathname === link.path ? 'text-lime-400' : 'text-zinc-400',
+                    'text-sm font-medium transition-colors hover:text-primary flex items-center gap-1.5',
+                    location.pathname === link.path ? 'text-primary' : 'text-muted-foreground',
                   )}
                 >
                   {link.name}
                   {link.badge != null && (
-                    <span className="bg-lime-400 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                    <span className="bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
                       {link.badge}
                     </span>
                   )}
@@ -276,22 +281,22 @@ export function Header() {
             <div className="relative hidden sm:block" ref={searchRef}>
               <form
                 onSubmit={(e) => handleSearchSubmit(e, searchQuery)}
-                className="flex items-center bg-zinc-900 rounded-full px-3 py-1.5 border border-zinc-800 focus-within:border-lime-400 focus-within:ring-1 focus-within:ring-lime-400 transition-all"
+                className="flex items-center bg-muted rounded-full px-3 py-1.5 border focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all"
               >
-                <Search className="w-4 h-4 text-zinc-400" />
+                <Search className="w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Pesquisar obras..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="bg-transparent border-none text-sm text-white focus:outline-none focus:ring-0 ml-2 w-48 lg:w-64 placeholder:text-zinc-600"
+                  className="bg-transparent border-none text-sm text-foreground focus:outline-none focus:ring-0 ml-2 w-48 lg:w-64 placeholder:text-muted-foreground"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery('')}
-                    className="text-zinc-400 hover:text-white"
+                    className="text-muted-foreground hover:text-foreground"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -299,9 +304,9 @@ export function Header() {
               </form>
 
               {searchQuery && (
-                <div className="absolute top-full right-0 mt-2 w-[300px] lg:w-[400px] bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[500px]">
+                <div className="absolute top-full right-0 mt-2 w-[300px] lg:w-[400px] bg-card border rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[500px]">
                   {isSearching ? (
-                    <div className="flex items-center justify-center p-8 text-lime-400">
+                    <div className="flex items-center justify-center p-8 text-primary">
                       <Loader2 className="w-6 h-6 animate-spin" />
                     </div>
                   ) : searchResults.length > 0 ? (
@@ -318,24 +323,24 @@ export function Header() {
                             }}
                             className={cn(
                               'flex items-center gap-3 p-2 rounded-lg transition-colors',
-                              selectedIndex === idx ? 'bg-zinc-800' : 'hover:bg-zinc-800',
+                              selectedIndex === idx ? 'bg-muted' : 'hover:bg-muted',
                             )}
                           >
                             <img
                               src={getCoverUrl(novel)}
                               alt={novel.title}
-                              className="w-10 h-14 object-cover rounded bg-zinc-800 shrink-0"
+                              className="w-10 h-14 object-cover rounded bg-muted shrink-0"
                             />
                             <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-bold text-white truncate group-hover:text-lime-400">
+                              <h4 className="text-sm font-bold text-foreground truncate group-hover:text-primary">
                                 {novel.title}
                               </h4>
-                              <div className="flex items-center gap-2 mt-1 text-xs text-zinc-400">
+                              <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                                 <span className="truncate">
                                   {novel.expand?.author?.name || 'Autor'}
                                 </span>
                                 {novel.rating ? (
-                                  <span className="text-lime-400 font-medium flex items-center gap-0.5">
+                                  <span className="text-primary font-medium flex items-center gap-0.5">
                                     ★ {novel.rating.toFixed(1)}
                                   </span>
                                 ) : null}
@@ -344,7 +349,7 @@ export function Header() {
                           </Link>
                         ))}
                       </div>
-                      <div className="p-2 border-t border-zinc-800/50 bg-zinc-900/50">
+                      <div className="p-2 border-t bg-muted/50">
                         <Link
                           to={`/search?q=${encodeURIComponent(searchQuery)}`}
                           onClick={() => {
@@ -353,10 +358,8 @@ export function Header() {
                             setHistory(getHistory())
                           }}
                           className={cn(
-                            'flex items-center justify-center p-2 text-sm font-bold text-lime-400 hover:text-lime-300 rounded-lg transition-colors',
-                            selectedIndex === searchResults.length
-                              ? 'bg-zinc-800'
-                              : 'hover:bg-zinc-800',
+                            'flex items-center justify-center p-2 text-sm font-bold text-primary hover:opacity-80 rounded-lg transition-colors',
+                            selectedIndex === searchResults.length ? 'bg-muted' : 'hover:bg-muted',
                           )}
                         >
                           Ver todos os resultados
@@ -364,7 +367,7 @@ export function Header() {
                       </div>
                     </div>
                   ) : (
-                    <div className="p-8 text-center text-sm text-zinc-500">
+                    <div className="p-8 text-center text-sm text-muted-foreground">
                       Nenhum resultado encontrado
                     </div>
                   )}
@@ -376,9 +379,18 @@ export function Header() {
               variant="ghost"
               size="icon"
               onClick={() => setIsMobileSearchOpen(true)}
-              className="sm:hidden text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-full"
+              className="sm:hidden text-muted-foreground hover:text-foreground hover:bg-muted rounded-full"
             >
               <Search className="w-5 h-5" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="text-muted-foreground hover:text-foreground rounded-full hidden sm:flex"
+            >
+              {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
             </Button>
 
             {isAuthenticated ? (
@@ -388,11 +400,11 @@ export function Header() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="relative text-zinc-400 hover:text-white rounded-full flex"
+                      className="relative text-muted-foreground hover:text-foreground rounded-full flex"
                     >
                       <Bell className="w-5 h-5" />
                       {unreadCount > 0 && (
-                        <span className="absolute top-0 right-0 w-4 h-4 bg-lime-400 rounded-full text-[10px] text-black font-bold flex items-center justify-center">
+                        <span className="absolute top-0 right-0 w-4 h-4 bg-primary rounded-full text-[10px] text-primary-foreground font-bold flex items-center justify-center">
                           {unreadCount > 9 ? '9+' : unreadCount}
                         </span>
                       )}
@@ -400,14 +412,14 @@ export function Header() {
                   </PopoverTrigger>
                   <PopoverContent
                     align="end"
-                    className="w-[calc(100vw-2rem)] sm:w-80 bg-zinc-900 border-zinc-800 p-0 rounded-xl shadow-xl overflow-hidden z-50"
+                    className="w-[calc(100vw-2rem)] sm:w-80 bg-card border-border p-0 rounded-xl shadow-xl overflow-hidden z-50"
                   >
-                    <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-black/40">
-                      <h3 className="font-bold text-white text-sm">Notificações</h3>
+                    <div className="flex items-center justify-between p-4 border-b bg-muted/40">
+                      <h3 className="font-bold text-foreground text-sm">Notificações</h3>
                       {unreadCount > 0 && (
                         <button
                           onClick={markAllAsRead}
-                          className="text-xs text-lime-400 hover:text-lime-300 font-medium transition-colors"
+                          className="text-xs text-primary hover:opacity-80 font-medium transition-colors"
                         >
                           Marcar todas como lidas
                         </button>
@@ -416,8 +428,10 @@ export function Header() {
                     <div className="max-h-[350px] overflow-y-auto overscroll-contain">
                       {notifications.length === 0 ? (
                         <div className="p-8 text-center flex flex-col items-center justify-center gap-2">
-                          <Bell className="w-8 h-8 text-zinc-700" />
-                          <p className="text-sm text-zinc-500 font-medium">Nenhuma notificação</p>
+                          <Bell className="w-8 h-8 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground font-medium">
+                            Nenhuma notificação
+                          </p>
                         </div>
                       ) : (
                         notifications.map((notif) => (
@@ -425,25 +439,25 @@ export function Header() {
                             key={notif.id}
                             onClick={() => handleNotificationClick(notif)}
                             className={cn(
-                              'p-4 border-b border-zinc-800/50 cursor-pointer transition-colors last:border-0 hover:bg-zinc-800/80',
-                              !notif.is_read ? 'bg-lime-400/5' : 'bg-transparent',
+                              'p-4 border-b cursor-pointer transition-colors last:border-0 hover:bg-muted/80',
+                              !notif.is_read ? 'bg-primary/5' : 'bg-transparent',
                             )}
                           >
                             <div className="flex gap-3">
                               <div
                                 className={cn(
                                   'w-2 h-2 rounded-full mt-1.5 shrink-0',
-                                  !notif.is_read ? 'bg-lime-400' : 'bg-transparent',
+                                  !notif.is_read ? 'bg-primary' : 'bg-transparent',
                                 )}
                               />
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm text-zinc-300 leading-snug">
-                                  <span className="font-bold text-white">
+                                <p className="text-sm text-foreground/80 leading-snug">
+                                  <span className="font-bold text-foreground">
                                     {notif.expand?.novel?.title}
                                   </span>
                                   : {notif.message.replace('Um novo capítulo foi publicado: ', '')}
                                 </p>
-                                <span className="text-xs text-zinc-500 mt-1.5 block font-medium">
+                                <span className="text-xs text-muted-foreground mt-1.5 block font-medium">
                                   {timeAgo(notif.created)}
                                 </span>
                               </div>
@@ -456,7 +470,7 @@ export function Header() {
                 </Popover>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Avatar className="w-9 h-9 border-2 border-lime-400 transition-colors cursor-pointer bg-zinc-800 hover:opacity-80">
+                    <Avatar className="w-9 h-9 border-2 border-primary transition-colors cursor-pointer bg-muted hover:opacity-80">
                       <AvatarImage
                         src={
                           user?.avatar
@@ -473,10 +487,10 @@ export function Header() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="w-56 bg-zinc-900 border-zinc-800 text-white rounded-xl shadow-xl"
+                    className="w-56 bg-card border-border text-foreground rounded-xl shadow-xl"
                   >
                     <div className="flex items-center gap-2 p-3">
-                      <Avatar className="w-8 h-8 bg-zinc-800 border border-zinc-700">
+                      <Avatar className="w-8 h-8 bg-muted border">
                         <AvatarImage
                           src={
                             user?.avatar
@@ -489,44 +503,56 @@ export function Header() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col space-y-0.5 leading-none min-w-0">
-                        <p className="font-medium text-sm text-zinc-100 truncate">
+                        <p className="font-medium text-sm text-foreground truncate">
                           {user?.name || 'Usuário'}
                         </p>
-                        <p className="text-xs text-zinc-400 truncate">{user?.email}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                       </div>
                     </div>
-                    <DropdownMenuSeparator className="bg-zinc-800" />
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                       asChild
-                      className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800 rounded-md m-1"
+                      className="cursor-pointer hover:bg-muted focus:bg-muted rounded-md m-1"
                     >
-                      <Link to="/profile" className="flex items-center w-full text-zinc-300">
+                      <Link
+                        to={`/profile/${user?.id}`}
+                        className="flex items-center w-full text-foreground/80"
+                      >
                         <User className="mr-2 h-4 w-4" />
                         <span>Meu Perfil</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       asChild
-                      className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800 rounded-md m-1"
+                      className="cursor-pointer hover:bg-muted focus:bg-muted rounded-md m-1"
                     >
-                      <Link to="/library" className="flex items-center w-full text-zinc-300">
+                      <Link to="/dashboard" className="flex items-center w-full text-foreground/80">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        <span>Dashboard</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      asChild
+                      className="cursor-pointer hover:bg-muted focus:bg-muted rounded-md m-1"
+                    >
+                      <Link to="/library" className="flex items-center w-full text-foreground/80">
                         <BookOpen className="mr-2 h-4 w-4" />
                         <span>Biblioteca</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       asChild
-                      className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800 rounded-md m-1"
+                      className="cursor-pointer hover:bg-muted focus:bg-muted rounded-md m-1"
                     >
-                      <Link to="/settings" className="flex items-center w-full text-zinc-300">
+                      <Link to="/settings" className="flex items-center w-full text-foreground/80">
                         <SettingsIcon className="mr-2 h-4 w-4" />
                         <span>Configurações</span>
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator className="bg-zinc-800" />
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={handleSignOut}
-                      className="cursor-pointer text-red-400 hover:bg-red-400/10 focus:bg-red-400/10 focus:text-red-400 rounded-md m-1"
+                      className="cursor-pointer text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive rounded-md m-1"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Sair</span>
@@ -539,13 +565,13 @@ export function Header() {
                 <Button
                   variant="outline"
                   onClick={() => setIsAuthOpen(true)}
-                  className="border-zinc-700 hover:bg-zinc-800 text-white bg-transparent rounded-xl h-10 px-6"
+                  className="rounded-xl h-10 px-6"
                 >
                   Entrar
                 </Button>
                 <Button
                   onClick={() => setIsAuthOpen(true)}
-                  className="bg-lime-400 text-black hover:bg-lime-500 font-bold rounded-xl h-10 px-6"
+                  className="font-bold rounded-xl h-10 px-6"
                 >
                   Cadastrar
                 </Button>
@@ -557,18 +583,18 @@ export function Header() {
 
       {/* Mobile Search Overlay */}
       {isMobileSearchOpen && (
-        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col sm:hidden animate-in fade-in duration-200">
-          <div className="flex items-center gap-3 p-4 border-b border-zinc-800">
+        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl flex flex-col sm:hidden animate-in fade-in duration-200">
+          <div className="flex items-center gap-3 p-4 border-b">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsMobileSearchOpen(false)}
-              className="shrink-0 text-zinc-400 hover:text-white rounded-full"
+              className="shrink-0 text-muted-foreground hover:text-foreground rounded-full"
             >
               <X className="w-5 h-5" />
             </Button>
             <form onSubmit={(e) => handleSearchSubmit(e, searchQuery)} className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 autoFocus
                 type="text"
@@ -576,13 +602,13 @@ export function Header() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-full py-2 pl-9 pr-10 text-sm text-white focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition-all"
+                className="w-full bg-muted border rounded-full py-2 pl-9 pr-10 text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -592,7 +618,7 @@ export function Header() {
           <div className="flex-1 overflow-y-auto p-4">
             {isSearching ? (
               <div className="flex justify-center p-8">
-                <Loader2 className="w-6 h-6 animate-spin text-lime-400" />
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
             ) : searchResults.length > 0 ? (
               <div className="flex flex-col gap-2">
@@ -608,19 +634,19 @@ export function Header() {
                     }}
                     className={cn(
                       'flex items-center gap-3 p-2 rounded-xl transition-colors',
-                      selectedIndex === idx ? 'bg-zinc-800' : 'hover:bg-zinc-800',
+                      selectedIndex === idx ? 'bg-muted' : 'hover:bg-muted',
                     )}
                   >
                     <img
                       src={getCoverUrl(novel)}
-                      className="w-12 h-16 object-cover rounded bg-zinc-800 shrink-0"
+                      className="w-12 h-16 object-cover rounded bg-muted shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-bold text-white truncate">{novel.title}</h4>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-zinc-400">
+                      <h4 className="text-sm font-bold text-foreground truncate">{novel.title}</h4>
+                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                         <span className="truncate">{novel.expand?.author?.name || 'Autor'}</span>
                         {novel.rating ? (
-                          <span className="text-lime-400 font-medium flex items-center gap-0.5">
+                          <span className="text-primary font-medium flex items-center gap-0.5">
                             ★ {novel.rating.toFixed(1)}
                           </span>
                         ) : null}
@@ -637,10 +663,10 @@ export function Header() {
                     setHistory(getHistory())
                   }}
                   className={cn(
-                    'block p-3 mt-2 text-center text-sm font-bold text-lime-400 bg-lime-400/10 rounded-xl transition-colors',
+                    'block p-3 mt-2 text-center text-sm font-bold text-primary bg-primary/10 rounded-xl transition-colors',
                     selectedIndex === searchResults.length
-                      ? 'bg-lime-400/30'
-                      : 'hover:bg-lime-400/20',
+                      ? 'bg-primary/30'
+                      : 'hover:bg-primary/20',
                   )}
                 >
                   Ver todos os resultados
@@ -648,7 +674,7 @@ export function Header() {
               </div>
             ) : history.length > 0 && !searchQuery ? (
               <div>
-                <h4 className="text-xs font-bold text-zinc-500 mb-3 uppercase tracking-wider flex items-center gap-2">
+                <h4 className="text-xs font-bold text-muted-foreground mb-3 uppercase tracking-wider flex items-center gap-2">
                   <Clock className="w-3 h-3" /> Buscas Recentes
                 </h4>
                 <div className="flex flex-col gap-1">
@@ -659,16 +685,16 @@ export function Header() {
                         setSearchQuery(h)
                         searchRef.current?.querySelector('input')?.focus()
                       }}
-                      className="text-left px-3 py-2 text-sm text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors flex items-center gap-3"
+                      className="text-left px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-muted rounded-lg transition-colors flex items-center gap-3"
                     >
-                      <Search className="w-4 h-4 text-zinc-500" />
+                      <Search className="w-4 h-4 text-muted-foreground" />
                       {h}
                     </button>
                   ))}
                 </div>
               </div>
             ) : searchQuery ? (
-              <div className="text-center p-8 text-sm text-zinc-500">
+              <div className="text-center p-8 text-sm text-muted-foreground">
                 Nenhum resultado encontrado
               </div>
             ) : null}

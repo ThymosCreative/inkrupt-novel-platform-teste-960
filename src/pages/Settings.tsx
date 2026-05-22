@@ -8,14 +8,18 @@ import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
 import { Loader2, Camera, Save, Type, Sun, Moon, Coffee } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useTheme } from '@/components/ThemeProvider'
 
 export default function Settings() {
+  const { setTheme } = useTheme()
   const { user } = useAuth()
   const { toast } = useToast()
 
   const [name, setName] = useState(user?.name || '')
+  const [bio, setBio] = useState(user?.bio || '')
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
     user?.avatar
@@ -33,8 +37,9 @@ export default function Settings() {
 
   useEffect(() => {
     if (user) {
-      if (!name && !avatarFile) {
+      if (!name && !avatarFile && !bio) {
         setName(user.name || '')
+        setBio(user.bio || '')
         if (user.avatar) {
           setAvatarPreview(pb.files.getURL(user, user.avatar))
         }
@@ -79,6 +84,7 @@ export default function Settings() {
     try {
       const formData = new FormData()
       formData.append('name', name)
+      formData.append('bio', bio)
       if (avatarFile) {
         formData.append('avatar', avatarFile)
       }
@@ -105,6 +111,9 @@ export default function Settings() {
   }
 
   const updatePreference = async (key: string, value: string) => {
+    if (key === 'theme') {
+      setTheme(value as 'dark' | 'light' | 'system' | 'sepia')
+    }
     const newPrefs = { ...preferences, [key]: value }
     setPreferences(newPrefs)
     if (user) {
@@ -212,6 +221,19 @@ export default function Settings() {
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Seu nome"
                       className="bg-zinc-800 border-zinc-700 text-white focus-visible:ring-lime-400 focus-visible:border-lime-400"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="bio" className="text-zinc-200">
+                      Biografia
+                    </Label>
+                    <Textarea
+                      id="bio"
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="Conte um pouco sobre você..."
+                      className="bg-zinc-800 border-zinc-700 text-white focus-visible:ring-lime-400 focus-visible:border-lime-400 min-h-[100px]"
                     />
                   </div>
                 </div>

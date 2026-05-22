@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-22T00:13:53.909Z",
+  "generatedAt": "2026-05-22T00:22:28.873Z",
   "collections": [
     {
       "name": "users",
@@ -41,6 +41,12 @@
         {
           "name": "preferences",
           "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "bio",
+          "type": "text",
           "required": false,
           "system": false
         }

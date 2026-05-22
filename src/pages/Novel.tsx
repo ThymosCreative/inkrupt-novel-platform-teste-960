@@ -371,7 +371,7 @@ export default function Novel() {
         <Link to="/">
           <Button
             variant="outline"
-            className="mt-6 border-lime-400 text-lime-400 hover:bg-lime-400/10 font-bold"
+            className="mt-6 border-zinc-700 text-white hover:bg-zinc-800 font-bold"
           >
             Voltar para o Início
           </Button>
@@ -411,18 +411,19 @@ export default function Novel() {
 
   return (
     <div className="pb-20">
-      <div className="w-full h-[300px] relative overflow-hidden">
+      <div className="w-full h-[300px] relative overflow-hidden bg-black">
         <div
-          className="absolute inset-0 bg-cover bg-center blur-3xl opacity-30 scale-110"
+          className="absolute inset-0 bg-cover bg-center scale-110"
           style={{ backgroundImage: `url(${coverUrl})` }}
         />
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-2xl" />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
       </div>
 
       <div className="container mx-auto px-4 -mt-32 relative z-10">
         <div
           id="novel-info-card"
-          className="flex flex-col md:flex-row gap-8 items-start bg-zinc-950/40 p-4 md:p-8 rounded-3xl backdrop-blur-sm border border-white/5 shadow-2xl"
+          className="flex flex-col md:flex-row gap-8 items-start bg-zinc-950/60 p-4 md:p-8 rounded-3xl backdrop-blur-sm border border-white/5 shadow-2xl"
         >
           <div className="shrink-0 mx-auto md:mx-0">
             <img
@@ -437,9 +438,11 @@ export default function Novel() {
                 <Badge className="bg-white text-black hover:bg-zinc-200">ORIGINAL</Badge>
               )}
               {novel.is_hot && (
-                <Badge className="bg-lime-400 text-black hover:bg-lime-500 border-none">HOT</Badge>
+                <Badge className="bg-white text-black hover:bg-zinc-200 border-none font-bold">
+                  HOT
+                </Badge>
               )}
-              <Badge variant="outline" className="border-lime-400 text-lime-400">
+              <Badge variant="outline" className="border-zinc-700 text-zinc-300">
                 {novel.status}
               </Badge>
             </div>
@@ -447,7 +450,7 @@ export default function Novel() {
             <h1 className="text-3xl md:text-5xl font-bold text-white mb-2">{novel.title}</h1>
             <div className="flex flex-col md:flex-row items-center md:items-start gap-3 mb-6">
               <div className="flex items-center gap-2">
-                <p className="text-lg text-lime-400 font-medium">
+                <p className="text-lg text-white font-medium">
                   {novel.expand?.author?.name ||
                     novel.expand?.author?.email ||
                     'Autor Desconhecido'}
@@ -455,7 +458,7 @@ export default function Novel() {
                 {novel.expand?.author?.is_author && (
                   <Badge
                     variant="outline"
-                    className="text-lime-400 border-lime-400 bg-lime-400/10 text-xs"
+                    className="text-white border-zinc-700 bg-zinc-800/50 text-xs"
                   >
                     <CheckCircle className="w-3 h-3 mr-1" /> Verificado
                   </Badge>
@@ -468,7 +471,7 @@ export default function Novel() {
                       onClick={handleFollowToggle}
                       variant={isFollowing ? 'outline' : 'default'}
                       size="sm"
-                      className={`h-7 px-3 rounded-full text-xs ${!isFollowing ? 'bg-lime-400 text-black hover:bg-lime-500 font-bold' : 'border-lime-400 text-lime-400 hover:bg-lime-400/10'}`}
+                      className={`h-7 px-3 rounded-full text-xs ${!isFollowing ? 'bg-white text-black hover:bg-zinc-200 font-bold' : 'border-zinc-700 text-zinc-300 hover:bg-zinc-800'}`}
                     >
                       {isFollowing ? 'Seguindo' : 'Seguir'}
                     </Button>
@@ -491,7 +494,7 @@ export default function Novel() {
               <div className="flex flex-col items-center md:items-start">
                 <span className="text-zinc-500 text-xs uppercase font-bold">Avaliação</span>
                 <span className="flex items-center gap-1.5 font-semibold text-white mt-1">
-                  <Star className="w-4 h-4 text-lime-400 fill-lime-400" /> {avgRating.toFixed(1)}{' '}
+                  <Star className="w-4 h-4 text-white fill-white" /> {avgRating.toFixed(1)}{' '}
                   <span className="text-zinc-500 font-normal text-xs ml-1">({reviews.length})</span>
                 </span>
               </div>
@@ -506,8 +509,7 @@ export default function Novel() {
               <div className="flex flex-col items-center md:items-start">
                 <span className="text-zinc-500 text-xs uppercase font-bold">Votos</span>
                 <span className="flex items-center gap-1.5 font-semibold text-white mt-1">
-                  <Star className="w-4 h-4 text-purple-400 fill-purple-400" />{' '}
-                  {novel.power_stones_count || 0}
+                  <Zap className="w-4 h-4 text-zinc-400" /> {novel.power_stones_count || 0}
                 </span>
               </div>
             </div>
@@ -524,7 +526,7 @@ export default function Novel() {
                   const resumeNum = getResumeChapterNum()
                   return (
                     <Link to={`/novel/${novel.id}/chapter/${resumeNum}`}>
-                      <Button className="w-full sm:w-auto bg-lime-400 text-black hover:bg-lime-500 font-bold px-8 h-12 rounded-xl text-base">
+                      <Button className="w-full sm:w-auto bg-white text-black hover:bg-zinc-200 font-bold px-8 h-12 rounded-xl text-base">
                         {libraryEntry?.expand?.last_chapter
                           ? `Continuar: Cap. ${resumeNum}`
                           : 'Ler Agora'}
@@ -548,7 +550,7 @@ export default function Novel() {
                   >
                     {libraryEntry ? (
                       <>
-                        <Bookmark className="w-5 h-5 mr-2 text-lime-400 fill-lime-400" />
+                        <Bookmark className="w-5 h-5 mr-2 text-white fill-white" />
                         {libraryEntry.status === 'reading'
                           ? 'Lendo'
                           : libraryEntry.status === 'completed'
@@ -612,7 +614,7 @@ export default function Novel() {
                     (v: any) =>
                       v.novel_id === novel.id && v.voted_at > new Date().setHours(0, 0, 0, 0),
                   )
-                    ? 'bg-lime-400 text-black hover:bg-lime-500'
+                    ? 'bg-white text-black hover:bg-zinc-200'
                     : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                 }`}
               >
@@ -639,25 +641,25 @@ export default function Novel() {
             <TabsList className="w-full sm:w-auto bg-zinc-900/50 p-1 rounded-xl mb-8 border border-zinc-800/50">
               <TabsTrigger
                 value="about"
-                className="flex-1 sm:w-32 rounded-lg data-[state=active]:bg-zinc-800 data-[state=active]:text-lime-400"
+                className="flex-1 sm:w-32 rounded-lg data-[state=active]:bg-zinc-800 data-[state=active]:text-white transition-colors"
               >
                 Sobre
               </TabsTrigger>
               <TabsTrigger
                 value="chapters"
-                className="flex-1 sm:w-32 rounded-lg data-[state=active]:bg-zinc-800 data-[state=active]:text-lime-400"
+                className="flex-1 sm:w-32 rounded-lg data-[state=active]:bg-zinc-800 data-[state=active]:text-white transition-colors"
               >
                 Capítulos ({chapters.length})
               </TabsTrigger>
               <TabsTrigger
                 value="reviews"
-                className="flex-1 sm:w-32 rounded-lg data-[state=active]:bg-zinc-800 data-[state=active]:text-lime-400"
+                className="flex-1 sm:w-32 rounded-lg data-[state=active]:bg-zinc-800 data-[state=active]:text-white transition-colors"
               >
                 Reviews ({reviews.length})
               </TabsTrigger>
               <TabsTrigger
                 value="discussions"
-                className="flex-1 sm:w-32 rounded-lg data-[state=active]:bg-zinc-800 data-[state=active]:text-lime-400"
+                className="flex-1 sm:w-32 rounded-lg data-[state=active]:bg-zinc-800 data-[state=active]:text-white transition-colors"
               >
                 Discussões ({discussions.length})
               </TabsTrigger>
@@ -669,7 +671,7 @@ export default function Novel() {
             >
               <div className="prose prose-invert prose-zinc max-w-none">
                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-white">
-                  <div className="w-1 h-5 bg-lime-400 rounded-full" />
+                  <div className="w-1 h-5 bg-white rounded-full" />
                   Sinopse
                 </h3>
                 <p className="text-zinc-300 leading-relaxed text-lg whitespace-pre-wrap">
@@ -679,7 +681,7 @@ export default function Novel() {
               {novel.genres && novel.genres.length > 0 && (
                 <div>
                   <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-white">
-                    <div className="w-1 h-5 bg-lime-400 rounded-full" />
+                    <div className="w-1 h-5 bg-white rounded-full" />
                     Tags
                   </h3>
                   <div className="flex flex-wrap gap-2">
@@ -724,7 +726,7 @@ export default function Novel() {
                           <span className="text-zinc-500 font-mono w-8 text-right">
                             {chap.chapter_number}
                           </span>
-                          <span className="text-zinc-200 group-hover:text-lime-400 transition-colors">
+                          <span className="text-zinc-200 group-hover:text-white transition-colors">
                             {chap.title}
                           </span>
                         </div>
@@ -733,7 +735,7 @@ export default function Novel() {
                             if (type === 'privilege')
                               return (
                                 <div className="flex items-center gap-2">
-                                  <Badge className="bg-lime-400 text-black text-[10px] uppercase font-black px-1.5 py-0 rounded-sm">
+                                  <Badge className="bg-white text-black text-[10px] uppercase font-black px-1.5 py-0 rounded-sm">
                                     Privilege
                                   </Badge>
                                   <span className="flex items-center gap-1 text-xs text-zinc-400 font-bold">
@@ -768,7 +770,7 @@ export default function Novel() {
             >
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-                  <div className="w-1 h-5 bg-lime-400 rounded-full" />
+                  <div className="w-1 h-5 bg-white rounded-full" />
                   Discussão da Novel
                 </h3>
               </div>
@@ -779,13 +781,13 @@ export default function Novel() {
                     value={discussionContent}
                     onChange={(e) => setDiscussionContent(e.target.value)}
                     placeholder="Escreva algo sobre a novel..."
-                    className="bg-zinc-900 border-zinc-800 text-white mb-4 resize-none focus-visible:ring-lime-400"
+                    className="bg-zinc-900 border-zinc-800 text-white mb-4 resize-none focus-visible:ring-zinc-600"
                   />
                   <div className="flex justify-end">
                     <Button
                       onClick={handlePostDiscussion}
                       disabled={isPostingDiscussion || !discussionContent.trim()}
-                      className="bg-lime-400 text-black hover:bg-lime-500 font-bold"
+                      className="bg-white text-black hover:bg-zinc-200 font-bold"
                     >
                       {isPostingDiscussion && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                       Postar
@@ -797,7 +799,7 @@ export default function Novel() {
                   Faça{' '}
                   <button
                     onClick={() => setIsAuthOpen(true)}
-                    className="text-lime-400 hover:underline font-bold"
+                    className="text-white hover:underline font-bold"
                   >
                     login
                   </button>{' '}
@@ -821,7 +823,7 @@ export default function Novel() {
                                 : `https://img.usecurling.com/ppl/thumbnail?seed=${disc.user}`
                             }
                           />
-                          <AvatarFallback>
+                          <AvatarFallback className="bg-zinc-800 text-white">
                             {disc.expand?.user?.name?.charAt(0).toUpperCase() || 'U'}
                           </AvatarFallback>
                         </Avatar>
@@ -833,7 +835,7 @@ export default function Novel() {
                             {disc.expand?.user?.is_author && (
                               <Badge
                                 variant="outline"
-                                className="text-lime-400 border-lime-400 bg-lime-400/10 py-0 px-1 text-[10px] h-4"
+                                className="text-white border-zinc-700 bg-zinc-800/50 py-0 px-1 text-[10px] h-4"
                               >
                                 <CheckCircle className="w-2 h-2 mr-1" /> Verificado
                               </Badge>
@@ -849,7 +851,7 @@ export default function Novel() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteDiscussion(disc.id)}
-                          className="text-red-400 hover:text-red-300 hover:bg-red-400/10 h-8 px-2"
+                          className="text-red-400 hover:text-red-300 hover:bg-red-900/20 h-8 px-2"
                         >
                           Excluir
                         </Button>
@@ -874,7 +876,7 @@ export default function Novel() {
             >
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-                  <div className="w-1 h-5 bg-lime-400 rounded-full" />
+                  <div className="w-1 h-5 bg-white rounded-full" />
                   Comunidade
                 </h3>
                 <Button
@@ -901,7 +903,7 @@ export default function Novel() {
                                 : `https://img.usecurling.com/ppl/thumbnail?seed=${rev.user}`
                             }
                           />
-                          <AvatarFallback>
+                          <AvatarFallback className="bg-zinc-800 text-white">
                             {rev.expand?.user?.name?.charAt(0).toUpperCase() || 'U'}
                           </AvatarFallback>
                         </Avatar>
@@ -909,11 +911,11 @@ export default function Novel() {
                           <p className="font-semibold text-sm text-zinc-200">
                             {rev.expand?.user?.name || rev.expand?.user?.email || 'Usuário'}
                           </p>
-                          <div className="flex items-center text-lime-400 mt-0.5">
+                          <div className="flex items-center mt-0.5 text-zinc-700">
                             {Array.from({ length: 5 }).map((_, i) => (
                               <Star
                                 key={i}
-                                className={`w-3 h-3 ${i < Math.floor(rev.rating) ? 'fill-current' : 'text-zinc-700'}`}
+                                className={`w-3 h-3 ${i < Math.floor(rev.rating) ? 'fill-white text-white' : ''}`}
                               />
                             ))}
                           </div>
@@ -960,7 +962,7 @@ export default function Novel() {
                   >
                     <Star
                       className={`w-8 h-8 ${
-                        star <= reviewRating ? 'fill-lime-400 text-lime-400' : 'text-zinc-700'
+                        star <= reviewRating ? 'fill-white text-white' : 'text-zinc-700'
                       }`}
                     />
                   </button>
@@ -977,7 +979,7 @@ export default function Novel() {
                   setReviewContent(e.target.value)
                   if (reviewErrors.content) setReviewErrors({ ...reviewErrors, content: undefined })
                 }}
-                className={`min-h-[120px] bg-zinc-900 border-zinc-800 focus-visible:ring-lime-400 resize-none ${reviewErrors.content ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                className={`min-h-[120px] bg-zinc-900 border-zinc-800 focus-visible:ring-zinc-600 resize-none ${reviewErrors.content ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
               />
               {reviewErrors.content && (
                 <p className="text-sm text-red-500">{reviewErrors.content}</p>
@@ -1008,7 +1010,7 @@ export default function Novel() {
               type="button"
               onClick={handleSubmitReview}
               disabled={isSubmittingReview}
-              className="w-full sm:w-auto bg-lime-400 text-black hover:bg-lime-500 font-bold"
+              className="w-full sm:w-auto bg-white text-black hover:bg-zinc-200 font-bold"
             >
               {isSubmittingReview && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {userReview ? 'Salvar Alterações' : 'Enviar Review'}
@@ -1086,7 +1088,7 @@ export default function Novel() {
                       <Button
                         onClick={() => handleUnlock('coin')}
                         disabled={!canUseCoin}
-                        className="w-full h-12 bg-amber-500 text-black hover:bg-amber-600 font-bold"
+                        className="w-full h-12 bg-white text-black hover:bg-zinc-200 font-bold"
                       >
                         <Coins className="w-4 h-4 mr-2" /> Usar {cost} Coins
                       </Button>
@@ -1095,7 +1097,7 @@ export default function Novel() {
                     {!canUseCoin && (!canUseFp || type === 'privilege') && (
                       <Link
                         to="/store"
-                        className="inline-block mt-4 text-sm text-lime-400 hover:underline font-medium"
+                        className="inline-block mt-4 text-sm text-zinc-400 hover:text-white hover:underline font-medium transition-colors"
                       >
                         Saldo insuficiente. Comprar Coins.
                       </Link>

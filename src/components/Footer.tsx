@@ -9,22 +9,22 @@ export function Footer() {
             <h4 className="font-bold mb-4 text-white">Sobre</h4>
             <ul className="space-y-2 text-sm text-zinc-400">
               <li>
-                <Link to="#" className="hover:text-lime-400 transition-colors">
+                <Link to="#" className="hover:text-white transition-colors">
                   Quem Somos
                 </Link>
               </li>
               <li>
-                <Link to="#" className="hover:text-lime-400 transition-colors">
+                <Link to="#" className="hover:text-white transition-colors">
                   Carreiras
                 </Link>
               </li>
               <li>
-                <Link to="#" className="hover:text-lime-400 transition-colors">
+                <Link to="#" className="hover:text-white transition-colors">
                   Termos de Uso
                 </Link>
               </li>
               <li>
-                <Link to="#" className="hover:text-lime-400 transition-colors">
+                <Link to="#" className="hover:text-white transition-colors">
                   Privacidade
                 </Link>
               </li>
@@ -34,22 +34,22 @@ export function Footer() {
             <h4 className="font-bold mb-4 text-white">Gêneros</h4>
             <ul className="space-y-2 text-sm text-zinc-400">
               <li>
-                <Link to="/explore" className="hover:text-lime-400 transition-colors">
+                <Link to="/explore" className="hover:text-white transition-colors">
                   Fantasia
                 </Link>
               </li>
               <li>
-                <Link to="/explore" className="hover:text-lime-400 transition-colors">
+                <Link to="/explore" className="hover:text-white transition-colors">
                   Romance
                 </Link>
               </li>
               <li>
-                <Link to="/explore" className="hover:text-lime-400 transition-colors">
+                <Link to="/explore" className="hover:text-white transition-colors">
                   Ação & Aventura
                 </Link>
               </li>
               <li>
-                <Link to="/explore" className="hover:text-lime-400 transition-colors">
+                <Link to="/explore" className="hover:text-white transition-colors">
                   Mistério
                 </Link>
               </li>
@@ -59,17 +59,17 @@ export function Footer() {
             <h4 className="font-bold mb-4 text-white">Para Autores</h4>
             <ul className="space-y-2 text-sm text-zinc-400">
               <li>
-                <Link to="/write" className="hover:text-lime-400 transition-colors">
+                <Link to="/write" className="hover:text-white transition-colors">
                   Centro de Criação
                 </Link>
               </li>
               <li>
-                <Link to="#" className="hover:text-lime-400 transition-colors">
+                <Link to="#" className="hover:text-white transition-colors">
                   Guia de Monetização
                 </Link>
               </li>
               <li>
-                <Link to="#" className="hover:text-lime-400 transition-colors">
+                <Link to="#" className="hover:text-white transition-colors">
                   Regras de Publicação
                 </Link>
               </li>
@@ -79,17 +79,17 @@ export function Footer() {
             <h4 className="font-bold mb-4 text-white">Suporte</h4>
             <ul className="space-y-2 text-sm text-zinc-400">
               <li>
-                <Link to="#" className="hover:text-lime-400 transition-colors">
+                <Link to="#" className="hover:text-white transition-colors">
                   Central de Ajuda
                 </Link>
               </li>
               <li>
-                <Link to="#" className="hover:text-lime-400 transition-colors">
+                <Link to="#" className="hover:text-white transition-colors">
                   Contato
                 </Link>
               </li>
               <li>
-                <Link to="#" className="hover:text-lime-400 transition-colors">
+                <Link to="#" className="hover:text-white transition-colors">
                   Discord
                 </Link>
               </li>

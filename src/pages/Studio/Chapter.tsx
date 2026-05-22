@@ -3,12 +3,12 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import pb from '@/lib/pocketbase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { ArrowLeft, Save, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Save, ExternalLink, Type, Hash } from 'lucide-react'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
 import { useToast } from '@/hooks/use-toast'
+import { RichTextEditor } from '@/components/ui/rich-text-editor'
 
 export default function StudioChapter() {
   const { id, chapterId } = useParams<{ id: string; chapterId: string }>()
@@ -30,7 +30,7 @@ export default function StudioChapter() {
   useEffect(() => {
     if (!chapterId) return
     pb.collection('chapters')
-      .getOne(chapterId)
+      .getOne(chapterId, { expand: 'novel' })
       .then((record) => {
         setChapter(record)
         setFormData({
@@ -52,7 +52,14 @@ export default function StudioChapter() {
     setSaving(true)
     setErrors({})
     try {
-      await pb.collection('chapters').update(chapterId, formData)
+      const dataToSave: any = { ...formData }
+      if (dataToSave.status === 'published' && !chapter?.published_at) {
+        dataToSave.published_at = new Date().toISOString()
+      }
+      const updated = await pb
+        .collection('chapters')
+        .update(chapterId, dataToSave, { expand: 'novel' })
+      setChapter(updated)
       toast({ title: 'Capítulo salvo com sucesso' })
     } catch (err) {
       setErrors(extractFieldErrors(err))
@@ -64,19 +71,29 @@ export default function StudioChapter() {
 
   if (loading) return <div className="p-12 text-center">Carregando...</div>
 
+  const textContent = formData.content
+    .replace(/<[^>]*>?/gm, '')
+    .replace(/&nbsp;/g, ' ')
+    .trim()
+  const wordCount = textContent ? textContent.split(/\s+/).length : 0
+  const charCount = textContent.length
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl flex flex-col h-[calc(100vh-4rem)]">
-      <div className="flex items-center gap-4 mb-6 shrink-0 flex-wrap">
+    <div className="container mx-auto px-4 py-8 max-w-5xl flex flex-col h-[calc(100vh-4rem)] relative">
+      <div className="flex items-center gap-4 mb-6 shrink-0 flex-wrap bg-background/95 backdrop-blur z-10 sticky top-0 py-2 border-b">
         <Button variant="ghost" size="icon" asChild className="rounded-full shrink-0">
           <Link to={`/studio/novel/${id}`}>
             <ArrowLeft className="w-5 h-5" />
           </Link>
         </Button>
-        <div className="flex-1 flex items-center gap-4 min-w-[200px]">
+        <div className="flex-1 flex flex-col min-w-[200px]">
+          <div className="text-xs text-muted-foreground font-medium mb-1 line-clamp-1">
+            {chapter?.expand?.novel?.title} • Capítulo {formData.chapter_number}
+          </div>
           <Input
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="text-xl font-bold border-none bg-transparent shadow-none focus-visible:ring-0 px-0 h-auto"
+            className="text-xl font-bold border-none bg-transparent shadow-none focus-visible:ring-0 px-0 h-auto py-0"
             placeholder="Título do Capítulo"
           />
         </div>
@@ -98,7 +115,7 @@ export default function StudioChapter() {
           </Link>
         </Button>
         <Button onClick={handleSave} disabled={saving} className="rounded-xl gap-2 shrink-0">
-          <Save className="w-4 h-4" /> {saving ? '...' : 'Salvar'}
+          <Save className="w-4 h-4" /> {saving ? 'Salvando...' : 'Salvar'}
         </Button>
       </div>
 
@@ -106,14 +123,29 @@ export default function StudioChapter() {
       {errors.status && <p className="text-sm text-destructive mb-4 shrink-0">{errors.status}</p>}
 
       <div className="flex-1 flex flex-col min-h-0 bg-card border rounded-2xl overflow-hidden shadow-sm">
-        <Textarea
+        <RichTextEditor
           value={formData.content}
-          onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-          className="flex-1 resize-none border-0 focus-visible:ring-0 rounded-none p-6 md:p-8 text-base md:text-lg leading-relaxed font-serif"
+          onChange={(val) => setFormData({ ...formData, content: val })}
+          className="flex-1 border-0 rounded-none h-full"
           placeholder="Escreva seu capítulo aqui..."
         />
       </div>
       {errors.content && <p className="text-sm text-destructive mt-2 shrink-0">{errors.content}</p>}
+
+      <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground shrink-0 border-t pt-4">
+        <div className="flex gap-4">
+          <span className="flex items-center gap-1.5">
+            <Type className="w-4 h-4" /> {wordCount} palavras
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Hash className="w-4 h-4" /> {charCount} caracteres
+          </span>
+        </div>
+        <div>
+          Última alteração:{' '}
+          {chapter?.updated ? new Date(chapter.updated).toLocaleString() : 'Não salvo'}
+        </div>
+      </div>
     </div>
   )
 }

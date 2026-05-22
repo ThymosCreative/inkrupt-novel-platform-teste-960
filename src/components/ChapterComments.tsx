@@ -119,13 +119,13 @@ export function ChapterComments({ chapterId, novelAuthorId, onClose }: ChapterCo
               placeholder="O que achou deste capítulo?"
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              className="bg-zinc-800 border-zinc-700 focus:border-lime-400 text-white mb-3 min-h-[80px] resize-none"
+              className="bg-zinc-800 border-zinc-700 focus:border-zinc-500 text-white mb-3 min-h-[80px] resize-none"
             />
             <div className="flex justify-end">
               <Button
                 type="submit"
                 disabled={submitting || !newComment.trim()}
-                className="bg-lime-400 text-black hover:bg-lime-500 rounded-xl h-9 px-4 font-bold text-sm"
+                className="bg-white text-black hover:bg-zinc-200 rounded-xl h-9 px-4 font-bold text-sm"
               >
                 {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Comentar
@@ -144,8 +144,8 @@ export function ChapterComments({ chapterId, novelAuthorId, onClose }: ChapterCo
             className={cn(
               'px-4 py-2 text-sm font-semibold transition-colors',
               activeTab === 'liked'
-                ? 'border-b-2 border-lime-400 text-lime-400'
-                : 'text-zinc-400 hover:text-zinc-300',
+                ? 'border-b-2 border-white text-white'
+                : 'text-zinc-500 hover:text-zinc-300',
             )}
           >
             Mais curtidos
@@ -155,8 +155,8 @@ export function ChapterComments({ chapterId, novelAuthorId, onClose }: ChapterCo
             className={cn(
               'px-4 py-2 text-sm font-semibold transition-colors',
               activeTab === 'recent'
-                ? 'border-b-2 border-lime-400 text-lime-400'
-                : 'text-zinc-400 hover:text-zinc-300',
+                ? 'border-b-2 border-white text-white'
+                : 'text-zinc-500 hover:text-zinc-300',
             )}
           >
             Mais recentes
@@ -165,7 +165,7 @@ export function ChapterComments({ chapterId, novelAuthorId, onClose }: ChapterCo
 
         {loading ? (
           <div className="flex justify-center py-10">
-            <Loader2 className="w-6 h-6 animate-spin text-lime-400" />
+            <Loader2 className="w-6 h-6 animate-spin text-white" />
           </div>
         ) : comments.length === 0 ? (
           <div className="text-center py-10 text-zinc-500 text-sm">
@@ -193,7 +193,7 @@ export function ChapterComments({ chapterId, novelAuthorId, onClose }: ChapterCo
                       {comment.expand?.user?.name || 'User'}
                     </span>
                     {comment.expand?.user?.id === novelAuthorId && (
-                      <span className="bg-lime-400/20 text-lime-400 text-[10px] font-bold px-1.5 py-0.5 rounded-sm">
+                      <span className="bg-white/10 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm">
                         Autor
                       </span>
                     )}
@@ -205,11 +205,11 @@ export function ChapterComments({ chapterId, novelAuthorId, onClose }: ChapterCo
                     {comment.content}
                   </p>
                   <div className="flex items-center gap-4">
-                    <button className="flex items-center gap-1.5 text-zinc-400 hover:text-lime-400 transition-colors group">
+                    <button className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors group">
                       <ThumbsUp className="w-3.5 h-3.5" />
                       <span className="text-xs font-medium">{Math.floor(Math.random() * 50)}</span>
                     </button>
-                    <button className="text-lime-400 text-xs font-semibold hover:underline">
+                    <button className="text-zinc-400 hover:text-white text-xs font-semibold hover:underline">
                       Ver respostas
                     </button>
                   </div>

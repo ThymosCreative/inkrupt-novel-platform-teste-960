@@ -189,7 +189,7 @@ export default function Reader() {
       setIsBookmarked(true)
       setLibraryEntryId(record.id)
       toast('Adicionado à biblioteca', {
-        icon: <Check className="w-4 h-4 text-lime-400" />,
+        icon: <Check className="w-4 h-4 text-white" />,
         style: { backgroundColor: '#18181b', borderColor: '#27272a', color: 'white' },
         duration: 3000,
       })
@@ -200,9 +200,21 @@ export default function Reader() {
     setActiveDrawer((prev) => (prev === drawer ? null : drawer))
   }
 
+  const hasVoted = votes.some(
+    (v: any) => v.novel_id === novel?.id && v.voted_at > new Date().setHours(0, 0, 0, 0),
+  )
+
+  const sidebarBtnClass = (isActive: boolean) =>
+    cn(
+      'w-12 h-12 rounded-full border flex items-center justify-center backdrop-blur-sm transition-all shadow-xl',
+      isActive
+        ? 'bg-zinc-700 border-zinc-600 text-white'
+        : 'bg-zinc-900/80 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-500',
+    )
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-lime-400 bg-black">
+      <div className="min-h-screen flex items-center justify-center text-white bg-black">
         <Loader2 className="w-8 h-8 animate-spin" />
       </div>
     )
@@ -213,7 +225,10 @@ export default function Reader() {
       <div className="min-h-screen flex items-center justify-center text-white bg-black">
         <div className="text-center">
           <h2 className="text-xl font-bold mb-4">Capítulo não encontrado</h2>
-          <Link to={`/novel/${id}`} className="text-lime-400 hover:underline">
+          <Link
+            to={`/novel/${id}`}
+            className="text-zinc-400 hover:text-white hover:underline transition-colors"
+          >
             Voltar para a obra
           </Link>
         </div>
@@ -245,7 +260,7 @@ export default function Reader() {
     >
       <div className="fixed top-0 left-0 w-full h-0.5 bg-black/10 z-50">
         <div
-          className="h-full bg-lime-400 transition-all duration-150 ease-out"
+          className="h-full bg-white opacity-30 transition-all duration-150 ease-out"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -271,7 +286,6 @@ export default function Reader() {
           <div className="text-sm font-bold opacity-70">Capítulo {chapterNum}</div>
           <div className="flex justify-end items-center">
             <Button
-              variant="outline"
               onClick={() => {
                 if (!user) {
                   toast.error('Faça login para votar.')
@@ -280,26 +294,13 @@ export default function Reader() {
                 voteNovel(novel.id)
               }}
               className={cn(
-                'transition-colors rounded-xl px-4 py-2 h-9 font-semibold',
-                votes.some(
-                  (v: any) =>
-                    v.novel_id === novel.id && v.voted_at > new Date().setHours(0, 0, 0, 0),
-                )
-                  ? 'bg-zinc-800 border border-lime-400 text-lime-400 hover:bg-zinc-800 hover:text-lime-400'
-                  : 'bg-lime-400 border-lime-400 text-black hover:bg-lime-500 hover:text-black',
+                'transition-colors rounded-xl px-4 py-2 h-9 font-semibold border',
+                hasVoted
+                  ? 'bg-zinc-700 border-zinc-600 text-white hover:bg-zinc-600'
+                  : 'bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700',
               )}
             >
-              <Zap
-                className={cn(
-                  'w-4 h-4 mr-1.5',
-                  votes.some(
-                    (v: any) =>
-                      v.novel_id === novel.id && v.voted_at > new Date().setHours(0, 0, 0, 0),
-                  )
-                    ? 'fill-lime-400'
-                    : '',
-                )}
-              />
+              <Zap className={cn('w-4 h-4 mr-1.5', hasVoted ? 'fill-white' : '')} />
               Votar
             </Button>
           </div>
@@ -325,21 +326,23 @@ export default function Reader() {
                   onClick={() => updateSetting('theme', 'dark')}
                   className={cn(
                     'w-10 h-10 rounded-full bg-black border-2',
-                    settings.theme === 'dark' ? 'border-lime-400' : 'border-zinc-600',
+                    settings.theme === 'dark' ? 'border-white' : 'border-zinc-600',
                   )}
                 />
                 <button
                   onClick={() => updateSetting('theme', 'sepia')}
                   className={cn(
                     'w-10 h-10 rounded-full bg-[#F5E6C8] border-2',
-                    settings.theme === 'sepia' ? 'border-lime-400' : 'border-zinc-400',
+                    settings.theme === 'sepia' ? 'border-white' : 'border-transparent',
                   )}
                 />
                 <button
                   onClick={() => updateSetting('theme', 'light')}
                   className={cn(
                     'w-10 h-10 rounded-full bg-white border-2',
-                    settings.theme === 'light' ? 'border-lime-400' : 'border-zinc-300',
+                    settings.theme === 'light'
+                      ? 'border-zinc-900 ring-2 ring-white'
+                      : 'border-zinc-300',
                   )}
                 />
               </div>
@@ -425,7 +428,7 @@ export default function Reader() {
               <Switch
                 checked={settings.paragraphComments}
                 onCheckedChange={(c) => updateSetting('paragraphComments', c)}
-                className="data-[state=checked]:bg-lime-400"
+                className="data-[state=checked]:bg-zinc-600 data-[state=unchecked]:bg-zinc-700"
               />
             </div>
           </div>
@@ -452,7 +455,7 @@ export default function Reader() {
               </div>
               <Progress
                 value={(chapterNum / totalChapters) * 100}
-                className="h-2 bg-zinc-800 [&>div]:bg-lime-400"
+                className="h-2 bg-zinc-800 [&>div]:bg-white"
               />
             </div>
             <div className="flex-1 overflow-y-auto">
@@ -466,7 +469,7 @@ export default function Reader() {
                   className={cn(
                     'w-full text-left p-4 border-b border-zinc-800/50 hover:bg-zinc-800/80 flex items-center justify-between transition-colors',
                     ch.chapter_number === chapterNum
-                      ? 'bg-zinc-800 border-l-2 border-l-lime-400 text-lime-400'
+                      ? 'bg-zinc-800 border-l-2 border-l-white text-white'
                       : ch.chapter_number < chapterNum
                         ? 'text-zinc-500'
                         : 'text-zinc-300',
@@ -500,7 +503,14 @@ export default function Reader() {
       {/* Sidebar Controls */}
       <div
         className={cn(
-          'fixed right-4 md:right-8 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-40 transition-opacity duration-300',
+          'fixed top-1/2 -translate-y-1/2 flex flex-col gap-4 z-40 transition-all duration-300',
+          activeDrawer === 'settings'
+            ? 'right-[296px]'
+            : activeDrawer === 'list'
+              ? 'right-[336px]'
+              : activeDrawer === 'comments'
+                ? 'right-[396px]'
+                : 'right-6',
           showUI || activeDrawer
             ? 'opacity-100 pointer-events-auto'
             : 'opacity-0 pointer-events-none',
@@ -508,36 +518,29 @@ export default function Reader() {
       >
         <button
           onClick={() => toggleDrawer('settings')}
-          className="w-12 h-12 rounded-full bg-zinc-900/80 border border-zinc-800 text-zinc-400 hover:text-white hover:border-lime-400 flex items-center justify-center backdrop-blur-sm transition-all shadow-xl"
+          className={sidebarBtnClass(activeDrawer === 'settings')}
         >
           <Settings className="w-5 h-5" />
         </button>
         <button
           onClick={() => toggleDrawer('list')}
-          className="w-12 h-12 rounded-full bg-zinc-900/80 border border-zinc-800 text-zinc-400 hover:text-white hover:border-lime-400 flex items-center justify-center backdrop-blur-sm transition-all shadow-xl"
+          className={sidebarBtnClass(activeDrawer === 'list')}
         >
           <List className="w-5 h-5" />
         </button>
-        <button
-          onClick={handleBookmark}
-          className="w-12 h-12 rounded-full bg-zinc-900/80 border border-zinc-800 text-zinc-400 hover:text-white hover:border-lime-400 flex items-center justify-center backdrop-blur-sm transition-all shadow-xl"
-        >
-          {isBookmarked ? (
-            <BookmarkCheck className="w-5 h-5 text-lime-400" />
-          ) : (
-            <Bookmark className="w-5 h-5" />
-          )}
+        <button onClick={handleBookmark} className={sidebarBtnClass(isBookmarked)}>
+          {isBookmarked ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
         </button>
         <button
           onClick={() => toggleDrawer('comments')}
-          className="w-12 h-12 rounded-full bg-zinc-900/80 border border-zinc-800 text-zinc-400 hover:text-white hover:border-lime-400 flex items-center justify-center backdrop-blur-sm transition-all shadow-xl"
+          className={sidebarBtnClass(activeDrawer === 'comments')}
         >
           <MessageCircle className="w-5 h-5" />
         </button>
       </div>
 
       <main className="container mx-auto px-4 md:px-8 mt-24 mb-20 transition-all duration-300 max-w-3xl">
-        <h1 className="text-3xl md:text-4xl font-bold mb-12 text-center font-sans tracking-tight">
+        <h1 className="text-2xl font-semibold mb-12 text-center font-sans tracking-tight">
           {chapter.title}
         </h1>
 
@@ -568,7 +571,7 @@ export default function Reader() {
                 </div>
                 <h2 className="text-2xl font-bold mb-2">Capítulo Bloqueado</h2>
                 {type === 'privilege' && (
-                  <Badge className="bg-lime-400 text-black mb-4 font-black">PRIVILEGE</Badge>
+                  <Badge className="bg-white text-black mb-4 font-black">PRIVILEGE</Badge>
                 )}
                 <p className="text-zinc-400 mb-6">
                   {type === 'privilege'
@@ -608,7 +611,7 @@ export default function Reader() {
                     wallet.fast_passes.reduce((a: number, b: any) => a + b.amount, 0) < 1) && (
                     <Link
                       to="/store"
-                      className="mt-6 text-sm text-lime-400 hover:underline font-medium"
+                      className="mt-6 text-sm text-zinc-300 hover:text-white hover:underline font-medium transition-colors"
                     >
                       Saldo insuficiente. Comprar Coins.
                     </Link>
@@ -660,23 +663,13 @@ export default function Reader() {
             <Zap
               className={cn(
                 'w-6 h-6 transition-colors',
-                votes.some(
-                  (v: any) =>
-                    v.novel_id === novel.id && v.voted_at > new Date().setHours(0, 0, 0, 0),
-                )
-                  ? 'text-lime-400 fill-lime-400'
-                  : 'text-zinc-400 group-hover:text-white',
+                hasVoted ? 'text-white fill-white' : 'text-zinc-400 group-hover:text-white',
               )}
             />
             <span
               className={cn(
                 'text-xs font-semibold tracking-widest transition-colors mt-1',
-                votes.some(
-                  (v: any) =>
-                    v.novel_id === novel.id && v.voted_at > new Date().setHours(0, 0, 0, 0),
-                )
-                  ? 'text-lime-400'
-                  : 'text-zinc-400 group-hover:text-white',
+                hasVoted ? 'text-white' : 'text-zinc-400 group-hover:text-white',
               )}
             >
               VOTAR
@@ -686,10 +679,10 @@ export default function Reader() {
             disabled
             className="flex flex-col items-center gap-2 group opacity-50 cursor-not-allowed"
           >
-            <Gift className="w-6 h-6 text-zinc-400" />
-            <span className="text-xs text-zinc-400 font-semibold tracking-widest flex flex-col items-center mt-1">
+            <Gift className="w-6 h-6 text-zinc-400 group-hover:text-white transition-colors" />
+            <span className="text-xs text-zinc-400 font-semibold tracking-widest flex flex-col items-center mt-1 group-hover:text-white transition-colors">
               PRESENTE
-              <span className="text-[10px] text-zinc-600 font-normal normal-case tracking-normal">
+              <span className="text-[10px] text-zinc-500 font-normal normal-case tracking-normal">
                 Em breve
               </span>
             </span>
@@ -710,7 +703,7 @@ export default function Reader() {
           <button
             onClick={() => navigate(`/novel/${novel.id}/chapter/${chapterNum + 1}`)}
             disabled={chapterNum >= totalChapters}
-            className="flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-bold transition-all bg-lime-400 hover:bg-lime-500 text-black shadow-lg shadow-lime-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-medium transition-all bg-zinc-800 border border-zinc-700 text-white hover:bg-zinc-700 shadow-lg shadow-black/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Próximo
             <ChevronRight className="w-5 h-5" />

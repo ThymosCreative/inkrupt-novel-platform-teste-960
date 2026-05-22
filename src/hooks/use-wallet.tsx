@@ -60,7 +60,7 @@ const getLevel = (exp: number) => {
 
 const getDailyStones = (level: number) => {
   if (level >= 5) return 3
-  if (level >= 3) return 2
+  if (level >= 4) return 2
   return 1
 }
 
@@ -171,11 +171,18 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const voteNovel = (novelId: string) => {
-    if (wallet.power_stones <= 0) return false
+    const today = new Date().setHours(0, 0, 0, 0)
+    if (wallet.power_stones <= 0) {
+      toast.error('Você não tem mais Power Stones hoje.')
+      return false
+    }
+    if (votes.some((v) => v.novel_id === novelId && v.voted_at > today)) {
+      toast.error('Você já votou nesta obra hoje.')
+      return false
+    }
 
     setWallet((prev) => {
       let extraFp: FastPass[] = []
-      const today = new Date().setHours(0, 0, 0, 0)
       let grantedFp = false
       if (prev.last_vote_reward < today) {
         extraFp.push({ amount: 1, expires_at: Date.now() + 7 * 86400000 })
@@ -183,10 +190,9 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (grantedFp) {
-        toast.success('Voto registrado! +1 Fast Pass, +5 EXP')
-        addTransaction(1, 'fast_pass', 'Recompensa de Voto')
+        setTimeout(() => toast.success('Voto registrado! +1 Fast Pass, +5 EXP'), 100)
       } else {
-        toast.success('Voto registrado! +5 EXP')
+        setTimeout(() => toast.success('Voto registrado! +5 EXP'), 100)
       }
 
       return {
@@ -196,6 +202,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         fast_passes: [...prev.fast_passes.filter((fp) => fp.expires_at > Date.now()), ...extraFp],
       }
     })
+
+    if (wallet.last_vote_reward < today) {
+      addTransaction(1, 'fast_pass', 'Recompensa de Voto')
+    }
 
     setVotes((prev) => [{ novel_id: novelId, voted_at: Date.now() }, ...prev])
     addExp(5, 'Voto com Power Stone')

@@ -434,14 +434,14 @@ export function Header() {
               <div className="flex items-center gap-2 sm:gap-4">
                 <Link
                   to="/store"
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 text-amber-500 rounded-full font-bold text-sm border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-zinc-400 hover:text-zinc-200 rounded-full text-sm transition-colors"
                 >
                   <Coins className="w-4 h-4" />
                   {wallet.coins}
                 </Link>
                 <Link
                   to="/store"
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-500 rounded-full font-bold text-sm border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-zinc-400 hover:text-zinc-200 rounded-full text-sm transition-colors"
                 >
                   <Zap className="w-4 h-4" />
                   {totalFastPasses}

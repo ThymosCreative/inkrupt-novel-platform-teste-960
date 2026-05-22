@@ -30,7 +30,7 @@ export default function Store() {
             {packages.map((pkg) => (
               <div
                 key={pkg.amount}
-                className={`relative p-6 rounded-2xl border ${pkg.featured ? 'border-lime-400 bg-lime-400/5' : 'border-border bg-card'} flex items-center justify-between`}
+                className={`relative p-6 rounded-2xl border ${pkg.featured ? 'border-lime-400 bg-zinc-900' : 'border-zinc-800 bg-zinc-900'} flex items-center justify-between`}
               >
                 {pkg.featured && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-lime-400 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
@@ -45,10 +45,7 @@ export default function Store() {
                 </div>
                 <Button
                   onClick={() => buyCoins(pkg.amount, pkg.price)}
-                  variant={pkg.featured ? 'default' : 'outline'}
-                  className={
-                    pkg.featured ? 'bg-lime-400 text-black hover:bg-lime-500 font-bold' : ''
-                  }
+                  className="bg-lime-400 text-black hover:bg-lime-500 font-bold"
                 >
                   R$ {pkg.price.toFixed(2).replace('.', ',')}
                 </Button>
@@ -61,7 +58,7 @@ export default function Store() {
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <Star className="w-5 h-5 text-primary" /> Meus Recursos
           </h2>
-          <div className="bg-card border rounded-2xl p-6 space-y-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-6">
             <div>
               <div className="text-sm font-medium text-muted-foreground mb-1">
                 Coins Disponíveis
@@ -100,7 +97,7 @@ export default function Store() {
 
       <div>
         <h2 className="text-xl font-bold mb-4">Histórico de Transações</h2>
-        <div className="bg-card border rounded-2xl overflow-hidden">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
           {transactions.length > 0 ? (
             <div className="divide-y">
               {transactions.slice(0, 30).map((t, idx) => (

@@ -27,7 +27,7 @@ export default function Reader() {
   const { id, num } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { wallet, unlockChapter, isChapterUnlocked } = useWallet()
+  const { wallet, votes, voteNovel, unlockChapter, isChapterUnlocked } = useWallet()
   const chapterNum = parseInt(num || '1', 10)
 
   const [novel, setNovel] = useState<any>(null)
@@ -370,32 +370,55 @@ export default function Reader() {
         })()}
       </main>
 
-      <div className="container mx-auto px-4 max-w-3xl flex justify-between gap-4">
-        <button
-          onClick={() => navigate(`/novel/${novel.id}/chapter/${chapterNum - 1}`)}
-          disabled={chapterNum <= 1}
-          className={cn(
-            'flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-bold transition-all border',
-            settings.theme === 'light'
-              ? 'bg-white hover:bg-zinc-100 border-zinc-300 text-black'
-              : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-800 text-white',
-            'disabled:opacity-50 disabled:cursor-not-allowed',
-          )}
-        >
-          <ChevronLeft className="w-5 h-5" />
-          Anterior
-        </button>
-        <button
-          onClick={() => navigate(`/novel/${novel.id}/chapter/${chapterNum + 1}`)}
-          disabled={chapterNum >= totalChapters}
-          className="flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-bold transition-all bg-lime-400 hover:bg-lime-500 text-black shadow-lg shadow-lime-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Próximo
-          <ChevronRight className="w-5 h-5" />
-        </button>
+      <div className="container mx-auto px-4 max-w-3xl flex flex-col gap-6">
+        <div className="flex justify-center">
+          <Button
+            onClick={() => {
+              if (!user) {
+                toast.error('Faça login para votar.')
+                return
+              }
+              voteNovel(novel.id)
+            }}
+            className={`h-12 rounded-xl px-8 font-bold ${
+              votes.some(
+                (v: any) => v.novel_id === novel.id && v.voted_at > new Date().setHours(0, 0, 0, 0),
+              )
+                ? 'bg-lime-400 text-black hover:bg-lime-500'
+                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+            }`}
+          >
+            <Zap className="w-5 h-5 mr-2" /> Votar ({wallet.power_stones})
+          </Button>
+        </div>
+
+        <div className="flex justify-between gap-4">
+          <button
+            onClick={() => navigate(`/novel/${novel.id}/chapter/${chapterNum - 1}`)}
+            disabled={chapterNum <= 1}
+            className={cn(
+              'flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-bold transition-all border',
+              settings.theme === 'light'
+                ? 'bg-white hover:bg-zinc-100 border-zinc-300 text-black'
+                : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-800 text-white',
+              'disabled:opacity-50 disabled:cursor-not-allowed',
+            )}
+          >
+            <ChevronLeft className="w-5 h-5" />
+            Anterior
+          </button>
+          <button
+            onClick={() => navigate(`/novel/${novel.id}/chapter/${chapterNum + 1}`)}
+            disabled={chapterNum >= totalChapters}
+            className="flex-1 flex items-center justify-center gap-2 h-14 rounded-xl font-bold transition-all bg-lime-400 hover:bg-lime-500 text-black shadow-lg shadow-lime-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Próximo
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
-      <div className="container mx-auto px-4 max-w-3xl pb-10">
+      <div className="container mx-auto px-4 max-w-3xl pb-10 mt-8">
         <ChapterComments
           chapterId={chapter.id}
           novelAuthorId={novel.author}

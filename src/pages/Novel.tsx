@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
   getNovel,
   getChapters,
@@ -52,6 +52,7 @@ import {
   BookOpen,
   ListPlus,
   Coins,
+  Zap,
 } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AddToListDialog } from '@/components/AddToListDialog'
@@ -60,8 +61,9 @@ import { getChapterCost } from '@/lib/utils'
 
 export default function Novel() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { user } = useAuth()
-  const { wallet, voteNovel, addExp } = useWallet()
+  const { wallet, votes, voteNovel, addExp, isChapterUnlocked, unlockChapter } = useWallet()
 
   const [novel, setNovel] = useState<any>(null)
   const [chapters, setChapters] = useState<any[]>([])
@@ -559,10 +561,16 @@ export default function Novel() {
               </Button>
               <Button
                 onClick={handleVote}
-                variant="outline"
-                className="w-full sm:w-auto border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 h-12 rounded-xl px-6 font-bold"
+                className={`w-full sm:w-auto h-12 rounded-xl px-6 font-bold ${
+                  votes.some(
+                    (v: any) =>
+                      v.novel_id === novel.id && v.voted_at > new Date().setHours(0, 0, 0, 0),
+                  )
+                    ? 'bg-lime-400 text-black hover:bg-lime-500'
+                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                }`}
               >
-                <Star className="w-5 h-5 mr-2" /> Votar ({wallet.power_stones})
+                <Zap className="w-5 h-5 mr-2" /> Votar ({wallet.power_stones})
               </Button>
             </div>
           </div>{' '}
@@ -637,45 +645,56 @@ export default function Novel() {
                   <span className="font-medium text-zinc-300">Índice</span>
                 </div>
                 <div className="divide-y divide-zinc-900/50 max-h-[500px] overflow-y-auto">
-                  {chapters.map((chap) => (
-                    <Link
-                      key={chap.id}
-                      to={`/novel/${novel.id}/chapter/${chap.chapter_number}`}
-                      className="flex items-center justify-between p-4 hover:bg-zinc-900/30 transition-colors group"
-                    >
-                      <div className="flex items-center gap-4">
-                        <span className="text-zinc-500 font-mono w-8 text-right">
-                          {chap.chapter_number}
-                        </span>
-                        <span className="text-zinc-200 group-hover:text-lime-400 transition-colors">
-                          {chap.title}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-zinc-500 text-sm">
-                        {(() => {
-                          const { type, cost } = getChapterCost(chap)
-                          if (type === 'privilege')
-                            return (
-                              <div className="flex items-center gap-2">
-                                <Badge className="bg-lime-400 text-black text-[10px] uppercase font-black px-1.5 py-0 rounded-sm">
-                                  Privilege
-                                </Badge>
-                                <span className="flex items-center gap-1 text-xs text-zinc-400 font-bold">
+                  {chapters.map((chap) => {
+                    const isLocked =
+                      chap.is_premium && !isChapterUnlocked(chap.id) && user?.id !== novel.author
+                    return (
+                      <div
+                        key={chap.id}
+                        onClick={() => {
+                          if (isLocked) {
+                            if (!user) setIsAuthOpen(true)
+                            else setSelectedChapter(chap)
+                          } else {
+                            navigate(`/novel/${novel.id}/chapter/${chap.chapter_number}`)
+                          }
+                        }}
+                        className="flex items-center justify-between p-4 hover:bg-zinc-900/30 transition-colors group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-4">
+                          <span className="text-zinc-500 font-mono w-8 text-right">
+                            {chap.chapter_number}
+                          </span>
+                          <span className="text-zinc-200 group-hover:text-lime-400 transition-colors">
+                            {chap.title}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-zinc-500 text-sm">
+                          {(() => {
+                            const { type, cost } = getChapterCost(chap)
+                            if (type === 'privilege')
+                              return (
+                                <div className="flex items-center gap-2">
+                                  <Badge className="bg-lime-400 text-black text-[10px] uppercase font-black px-1.5 py-0 rounded-sm">
+                                    Privilege
+                                  </Badge>
+                                  <span className="flex items-center gap-1 text-xs text-zinc-400 font-bold">
+                                    <Lock className="w-3 h-3" /> {cost} Coins
+                                  </span>
+                                </div>
+                              )
+                            if (type === 'premium')
+                              return (
+                                <div className="flex items-center gap-1 text-xs text-zinc-400 font-bold">
                                   <Lock className="w-3 h-3" /> {cost} Coins
-                                </span>
-                              </div>
-                            )
-                          if (type === 'premium')
-                            return (
-                              <div className="flex items-center gap-1 text-xs text-zinc-400 font-bold">
-                                <Lock className="w-3 h-3" /> {cost} Coins
-                              </div>
-                            )
-                          return <div className="w-4" />
-                        })()}
+                                </div>
+                              )
+                            return <div className="w-4" />
+                          })()}
+                        </div>
                       </div>
-                    </Link>
-                  ))}
+                    )
+                  })}
                   {chapters.length === 0 && (
                     <div className="p-8 text-center text-zinc-500">
                       Nenhum capítulo publicado ainda.
@@ -946,6 +965,89 @@ export default function Novel() {
           onOpenChange={setIsListDialogOpen}
         />
       )}
+
+      <Dialog open={!!selectedChapter} onOpenChange={(open) => !open && setSelectedChapter(null)}>
+        <DialogContent className="bg-zinc-950 border-zinc-800 text-white sm:max-w-md">
+          {selectedChapter &&
+            (() => {
+              const { type, cost } = getChapterCost(selectedChapter)
+              const activeFps = wallet.fast_passes.reduce(
+                (a, b) => a + (b.expires_at > Date.now() ? b.amount : 0),
+                0,
+              )
+              const canUseCoin = wallet.coins >= cost
+              const canUseFp = type === 'premium' && activeFps >= 1
+
+              const handleUnlock = (method: 'coin' | 'fast_pass') => {
+                const success = unlockChapter(selectedChapter.id, method, cost)
+                if (success) {
+                  toast.success('Capítulo desbloqueado!')
+                  setSelectedChapter(null)
+                  navigate(`/novel/${novel.id}/chapter/${selectedChapter.chapter_number}`)
+                }
+              }
+
+              return (
+                <>
+                  <DialogHeader>
+                    <DialogTitle className="text-xl">Desbloquear Capítulo</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4 space-y-4 text-center">
+                    <div className="text-lg font-bold text-zinc-200 mb-2">
+                      {selectedChapter.title}
+                    </div>
+
+                    <div className="flex justify-center items-center gap-4 text-sm text-zinc-400 mb-6">
+                      <div className="flex flex-col items-center">
+                        <span className="font-bold text-amber-500 flex items-center gap-1">
+                          <Coins className="w-4 h-4" /> {wallet.coins}
+                        </span>
+                        <span className="text-[10px] uppercase">Seus Coins</span>
+                      </div>
+                      {type === 'premium' && (
+                        <div className="flex flex-col items-center">
+                          <span className="font-bold text-blue-500 flex items-center gap-1">
+                            <Zap className="w-4 h-4" /> {activeFps}
+                          </span>
+                          <span className="text-[10px] uppercase">Seus Fast Passes</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      {type === 'premium' && (
+                        <Button
+                          onClick={() => handleUnlock('fast_pass')}
+                          disabled={!canUseFp}
+                          variant="outline"
+                          className="w-full h-12 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 font-bold"
+                        >
+                          <Zap className="w-4 h-4 mr-2" /> Usar 1 Fast Pass
+                        </Button>
+                      )}
+                      <Button
+                        onClick={() => handleUnlock('coin')}
+                        disabled={!canUseCoin}
+                        className="w-full h-12 bg-amber-500 text-black hover:bg-amber-600 font-bold"
+                      >
+                        <Coins className="w-4 h-4 mr-2" /> Usar {cost} Coins
+                      </Button>
+                    </div>
+
+                    {!canUseCoin && (!canUseFp || type === 'privilege') && (
+                      <Link
+                        to="/store"
+                        className="inline-block mt-4 text-sm text-lime-400 hover:underline font-medium"
+                      >
+                        Saldo insuficiente. Comprar Coins.
+                      </Link>
+                    )}
+                  </div>
+                </>
+              )
+            })()}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

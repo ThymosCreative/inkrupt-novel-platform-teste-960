@@ -305,19 +305,24 @@ export default function Novel() {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
               {chapters.length > 0 ? (
-                <Link
-                  to={
-                    libraryEntry?.expand?.last_chapter
-                      ? `/novel/${novel.id}/chapter/${libraryEntry.expand.last_chapter.chapter_number}`
-                      : `/novel/${novel.id}/chapter/1`
+                (() => {
+                  const getResumeChapterNum = () => {
+                    if (!libraryEntry?.expand?.last_chapter) return 1
+                    const lastChapterNum = libraryEntry.expand.last_chapter.chapter_number
+                    const hasNext = chapters.some((c) => c.chapter_number === lastChapterNum + 1)
+                    return hasNext ? lastChapterNum + 1 : lastChapterNum
                   }
-                >
-                  <Button className="w-full sm:w-auto bg-lime-400 text-black hover:bg-lime-500 font-bold px-8 h-12 rounded-xl text-base">
-                    {libraryEntry?.expand?.last_chapter
-                      ? `Resume: Chapter ${libraryEntry.expand.last_chapter.chapter_number}`
-                      : 'Ler Agora'}
-                  </Button>
-                </Link>
+                  const resumeNum = getResumeChapterNum()
+                  return (
+                    <Link to={`/novel/${novel.id}/chapter/${resumeNum}`}>
+                      <Button className="w-full sm:w-auto bg-lime-400 text-black hover:bg-lime-500 font-bold px-8 h-12 rounded-xl text-base">
+                        {libraryEntry?.expand?.last_chapter
+                          ? `Continuar: Cap. ${resumeNum}`
+                          : 'Ler Agora'}
+                      </Button>
+                    </Link>
+                  )
+                })()
               ) : (
                 <Button
                   disabled

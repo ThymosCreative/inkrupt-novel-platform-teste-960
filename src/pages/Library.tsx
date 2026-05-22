@@ -18,7 +18,7 @@ export default function Library() {
       pb.collection('library_entries')
         .getFullList({
           filter: `user = "${user.id}"`,
-          expand: 'novel,novel.author',
+          expand: 'novel,novel.author,last_chapter',
           sort: '-updated',
         })
         .then((res) => {
@@ -92,6 +92,11 @@ export default function Library() {
               <p className="text-xs text-zinc-400 mt-1 truncate">
                 {novel.expand?.author?.name || novel.expand?.author?.email || 'Autor'}
               </p>
+              {entry.expand?.last_chapter && (
+                <p className="text-[10px] text-lime-400 mt-1 truncate font-medium">
+                  Último lido: Cap. {entry.expand.last_chapter.chapter_number}
+                </p>
+              )}
             </Link>
           )
         })}

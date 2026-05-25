@@ -17,6 +17,7 @@
 - [x] **[F0-4]** `Search.tsx` — `minRating` e `chapterRange` fora do array de dependências do `useEffect` → mudar esses filtros não dispara nova busca
 - [x] **[F0-5]** `Studio/Novel.tsx` — Número do próximo capítulo calculado com `chapters[0].chapter_number + 1` → pode gerar duplicata se um capítulo intermediário foi deletado
 - [x] **[F0-6]** `NotFound.tsx` — Página 404 genérica, fora do design system, texto em inglês
+- [x] **[F0-7]** Tela preta após login de novo usuário — `ErrorBoundary` ausente + loop infinito de check-in (`wallet.last_checkin` como dep do `useEffect`) + `fast_passes` não normalizado + `useEffect` de notificações/biblioteca re-disparando em todo `authRefresh`
 
 ---
 

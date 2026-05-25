@@ -11,12 +11,12 @@
 ## 🔴 FASE 0 — Hotfixes Críticos
 > Bugs que quebram funcionalidade ou segurança. **Resolver antes de qualquer nova feature.**
 
-- [ ] **[F0-1]** `Novel.tsx` — `unlockChapter` chamado sem `await` → usuário lê capítulo premium de graça sem pagar
-- [ ] **[F0-2]** `Profile.tsx` — `getAuthorApplication` e `createAuthorApplication` não importados → crash ao abrir qualquer perfil de usuário não-autor
-- [ ] **[F0-3]** `Header.tsx` — Botão "Tornar-se Autor" no dropdown bypassa o sistema de aplicações e concede `is_author: true` sem aprovação
-- [ ] **[F0-4]** `Search.tsx` — `minRating` e `chapterRange` fora do array de dependências do `useEffect` → mudar esses filtros não dispara nova busca
-- [ ] **[F0-5]** `Studio/Novel.tsx` — Número do próximo capítulo calculado com `chapters[0].chapter_number + 1` → pode gerar duplicata se um capítulo intermediário foi deletado
-- [ ] **[F0-6]** `NotFound.tsx` — Página 404 genérica, fora do design system, texto em inglês
+- [x] **[F0-1]** `Novel.tsx` — `unlockChapter` chamado sem `await` → usuário lê capítulo premium de graça sem pagar
+- [x] **[F0-2]** `Profile.tsx` — `getAuthorApplication` e `createAuthorApplication` não importados → crash ao abrir qualquer perfil de usuário não-autor
+- [x] **[F0-3]** `Header.tsx` — Botão "Tornar-se Autor" no dropdown bypassa o sistema de aplicações e concede `is_author: true` sem aprovação
+- [x] **[F0-4]** `Search.tsx` — `minRating` e `chapterRange` fora do array de dependências do `useEffect` → mudar esses filtros não dispara nova busca
+- [x] **[F0-5]** `Studio/Novel.tsx` — Número do próximo capítulo calculado com `chapters[0].chapter_number + 1` → pode gerar duplicata se um capítulo intermediário foi deletado
+- [x] **[F0-6]** `NotFound.tsx` — Página 404 genérica, fora do design system, texto em inglês
 
 ---
 

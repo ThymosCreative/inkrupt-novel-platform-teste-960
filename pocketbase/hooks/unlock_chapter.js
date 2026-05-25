@@ -17,7 +17,10 @@ routerAdd(
       return e.notFoundError('chapter not found')
     }
 
-    if (!chapter.getBool('is_premium')) {
+    // Support both is_premium (legacy bool) and type (new SelectField)
+    const isPremium =
+      chapter.getBool('is_premium') || chapter.getString('type') === 'premium'
+    if (!isPremium) {
       return e.badRequestError('chapter is not premium')
     }
 
@@ -43,24 +46,34 @@ routerAdd(
         const user = txApp.findRecordById('_pb_users_auth_', userId)
 
         if (method === 'fast_pass') {
+          // user.get() in PocketBase hooks returns Go-native types.
+          // Array.isArray() is false for Go []interface{}, so we normalise
+          // via JSON round-trip to get a proper JS array.
           const rawFp = user.get('fast_passes')
           let fastPasses = []
           try {
-            fastPasses = typeof rawFp === 'string' ? JSON.parse(rawFp) : rawFp || []
-          } catch (err) {}
-          if (!Array.isArray(fastPasses)) fastPasses = []
+            if (rawFp != null) {
+              const fpStr =
+                typeof rawFp === 'string' ? rawFp : JSON.stringify(rawFp)
+              if (fpStr && fpStr !== 'null') {
+                const parsed = JSON.parse(fpStr)
+                if (Array.isArray(parsed)) fastPasses = parsed
+              }
+            }
+          } catch (_) {}
 
           const now = Date.now()
-          let activeFps = fastPasses.filter((fp) => fp.expires_at > now)
-          const total = activeFps.reduce((a, b) => a + b.amount, 0)
+          let activeFps = fastPasses.filter((fp) => fp && fp.expires_at > now)
+          const total = activeFps.reduce((a, b) => a + (b.amount || 0), 0)
 
           if (total < 1) {
             errResponse = e.badRequestError('insufficient fast passes')
             throw new Error('rollback')
           }
 
+          // Deduct 1 fast pass from the earliest-expiring batch
           activeFps.sort((a, b) => a.expires_at - b.expires_at)
-          activeFps[0].amount -= 1
+          activeFps[0].amount = (activeFps[0].amount || 0) - 1
           const newFp = activeFps.filter((fp) => fp.amount > 0)
           user.set('fast_passes', newFp)
         } else {

@@ -93,7 +93,8 @@ export function Header() {
 
   useEffect(() => {
     loadNotifications()
-  }, [user])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   useRealtime(
     'users',
@@ -163,7 +164,8 @@ export function Header() {
     } else {
       setLibraryCount(0)
     }
-  }, [user])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   useRealtime(
     'library_entries',

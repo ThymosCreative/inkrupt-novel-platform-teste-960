@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react'
 import { toast } from 'sonner'
 import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/hooks/use-auth'
@@ -65,6 +65,22 @@ const getDailyStones = (level: number) => {
   return 1
 }
 
+/**
+ * Safely normalise the fast_passes value coming from PocketBase.
+ * A brand-new user record may have null / undefined / non-array for this
+ * JSON field. Always coerce to a valid FastPass[] before iterating.
+ */
+const normaliseFastPasses = (raw: unknown): FastPass[] => {
+  if (!Array.isArray(raw)) return []
+  return raw.filter(
+    (fp): fp is FastPass =>
+      fp !== null &&
+      typeof fp === 'object' &&
+      typeof (fp as FastPass).amount === 'number' &&
+      typeof (fp as FastPass).expires_at === 'number',
+  )
+}
+
 const defaultWallet: Wallet = {
   coins: 0,
   fast_passes: [],
@@ -81,7 +97,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const wallet: Wallet = user
     ? {
         coins: user.coins || 0,
-        fast_passes: user.fast_passes || [],
+        fast_passes: normaliseFastPasses(user.fast_passes),
         power_stones: user.power_stones ?? 1,
         last_checkin: user.last_checkin || 0,
         last_vote_reward: user.last_vote_reward || 0,
@@ -149,7 +165,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     const oldLevel = getLevel(wallet.exp)
     const newLevel = getLevel(newExp)
 
-    let newFp = [...(wallet.fast_passes || []).filter((fp) => fp.expires_at > Date.now())]
+    let newFp = normaliseFastPasses(wallet.fast_passes).filter((fp) => fp.expires_at > Date.now())
     let newStones = wallet.power_stones
 
     if (newLevel > oldLevel) {
@@ -179,53 +195,69 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  // Track which user IDs have had check-in attempted this session so the
+  // check-in does NOT re-fire every time authRefresh replaces the user object
+  // with a fresh reference (which would change wallet.last_checkin and cause
+  // an infinite loop: check-in → authRefresh → new user ref → check-in …).
+  const checkinDoneRef = useRef<Set<string>>(new Set())
+
   useEffect(() => {
-    if (!user) return
+    if (!user?.id) return
     const today = new Date().setHours(0, 0, 0, 0)
-    if (wallet.last_checkin < today) {
-      const currentLevel = getLevel(wallet.exp)
-      const dailyStones = getDailyStones(currentLevel)
+    if (wallet.last_checkin >= today) return          // already checked in today
+    if (checkinDoneRef.current.has(user.id)) return   // already attempted this session
 
-      const validFps = (wallet.fast_passes || []).filter((fp) => fp.expires_at > Date.now())
-      const newFp = { amount: 1, expires_at: Date.now() + 7 * 86400000 }
+    checkinDoneRef.current.add(user.id)
 
-      const newExp = wallet.exp + 10
-      const newLevel = getLevel(newExp)
+    const currentLevel = getLevel(wallet.exp)
+    const dailyStones = getDailyStones(currentLevel)
 
-      let nextFps = [...validFps, newFp]
-      let nextStones = dailyStones
+    const validFps = normaliseFastPasses(wallet.fast_passes).filter(
+      (fp) => fp.expires_at > Date.now(),
+    )
+    const newFp = { amount: 1, expires_at: Date.now() + 7 * 86400000 }
 
-      if (newLevel > currentLevel) {
-        if (newLevel === 2) nextFps.push({ amount: 3, expires_at: Date.now() + 7 * 86400000 })
-        if (newLevel === 3) nextFps.push({ amount: 5, expires_at: Date.now() + 7 * 86400000 })
-        if (newLevel === 4) {
-          nextFps.push({ amount: 5, expires_at: Date.now() + 7 * 86400000 })
-          nextStones += 1
-        }
-        if (newLevel === 5) {
-          nextFps.push({ amount: 10, expires_at: Date.now() + 7 * 86400000 })
-          nextStones += 2
-        }
-        setTimeout(() => toast.success(`Parabéns! Você subiu para o Nível ${newLevel}!`), 500)
+    const newExp = wallet.exp + 10
+    const newLevel = getLevel(newExp)
+
+    let nextFps = [...validFps, newFp]
+    let nextStones = dailyStones
+
+    if (newLevel > currentLevel) {
+      if (newLevel === 2) nextFps.push({ amount: 3, expires_at: Date.now() + 7 * 86400000 })
+      if (newLevel === 3) nextFps.push({ amount: 5, expires_at: Date.now() + 7 * 86400000 })
+      if (newLevel === 4) {
+        nextFps.push({ amount: 5, expires_at: Date.now() + 7 * 86400000 })
+        nextStones += 1
       }
-
-      pb.collection('users')
-        .update(user.id, {
-          last_checkin: Date.now(),
-          power_stones: nextStones,
-          fast_passes: nextFps,
-          exp: newExp,
-          level: newLevel,
-        })
-        .then(() => {
-          addTransaction(1, 'fast_pass', 'Daily Check-in')
-          addTransaction(10, 'exp', 'Daily Check-in')
-          toast.success('Check-in Diário! +1 Fast Pass, +10 EXP')
-        })
-        .catch(console.error)
+      if (newLevel === 5) {
+        nextFps.push({ amount: 10, expires_at: Date.now() + 7 * 86400000 })
+        nextStones += 2
+      }
+      setTimeout(() => toast.success(`Parabéns! Você subiu para o Nível ${newLevel}!`), 500)
     }
+
+    pb.collection('users')
+      .update(user.id, {
+        last_checkin: Date.now(),
+        power_stones: nextStones,
+        fast_passes: nextFps,
+        exp: newExp,
+        level: newLevel,
+      })
+      .then(() => {
+        addTransaction(1, 'fast_pass', 'Daily Check-in')
+        addTransaction(10, 'exp', 'Daily Check-in')
+        toast.success('Check-in Diário! +1 Fast Pass, +10 EXP')
+      })
+      .catch((err) => {
+        // Allow retry on next session by removing from done-set
+        checkinDoneRef.current.delete(user.id)
+        console.error('[check-in] failed:', err)
+      })
+    // Only re-run when user ID changes (login / logout).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, wallet.last_checkin])
+  }, [user?.id])
 
   const buyCoins = async (amount: number, price: number) => {
     if (!user) return
@@ -267,7 +299,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       const newLevel = getLevel(newExp)
 
       let nextFps = [
-        ...(wallet.fast_passes || []).filter((fp) => fp.expires_at > Date.now()),
+        ...normaliseFastPasses(wallet.fast_passes).filter((fp) => fp.expires_at > Date.now()),
         ...extraFp,
       ]
       let nextStones = wallet.power_stones - 1
@@ -338,7 +370,9 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         let updates: any = { exp: newExp, level: newLevel }
 
         if (newLevel > oldLevel) {
-          let nextFps = [...(wallet.fast_passes || []).filter((fp) => fp.expires_at > Date.now())]
+          let nextFps = normaliseFastPasses(wallet.fast_passes).filter(
+            (fp) => fp.expires_at > Date.now(),
+          )
           let nextStones = wallet.power_stones
 
           if (newLevel === 2) nextFps.push({ amount: 3, expires_at: Date.now() + 7 * 86400000 })
@@ -376,7 +410,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     return unlockedChapters.some((c) => c.chapter_id === chapterId)
   }
 
-  const totalFastPasses = (wallet.fast_passes || [])
+  const totalFastPasses = normaliseFastPasses(wallet.fast_passes)
     .filter((fp) => fp.expires_at > Date.now())
     .reduce((a, b) => a + b.amount, 0)
 

@@ -117,9 +117,8 @@ export default function Reader() {
           setTotalChapters(clist.length)
 
           if (user && c) {
-            if (n.author === user.id) {
-              setIsUnlockedLocal(true)
-            } else if (!c.is_premium) {
+            // getChapterCost handles both is_premium (legacy bool) and type field (migration 0027)
+            if (n.author === user.id || getChapterCost(c).type === 'free') {
               setIsUnlockedLocal(true)
             } else {
               try {
@@ -132,7 +131,7 @@ export default function Reader() {
               }
             }
           } else {
-            setIsUnlockedLocal(!c?.is_premium)
+            setIsUnlockedLocal(getChapterCost(c).type === 'free')
           }
 
           setLoading(false)
@@ -288,7 +287,9 @@ export default function Reader() {
   }
 
   const isAuthor = user && novel?.author === user.id
-  const isLocked = !isAuthor && chapter.is_premium && !isUnlockedLocal
+  // Hoist getChapterCost so both isLocked check and the locked-UI can reuse it
+  const { type: chapterType, cost: chapterCost } = getChapterCost(chapter)
+  const isLocked = !isAuthor && chapterType !== 'free' && !isUnlockedLocal
 
   return (
     <div
@@ -605,7 +606,7 @@ export default function Reader() {
 
         {(() => {
           if (isLocked) {
-            const { type, cost } = getChapterCost(chapter)
+            const { type, cost } = { type: chapterType, cost: chapterCost }
 
             const handleLocalUnlock = async (method: 'coin' | 'fast_pass') => {
               if (!user) {
@@ -679,9 +680,17 @@ export default function Reader() {
             )
           }
 
-          const contentText =
-            chapter.content ||
-            `<p>[Conteúdo do Capítulo ${chapterNum}]</p><p>Este capítulo foi desbloqueado com sucesso usando sua Inkrupt Wallet.</p>`
+          // Handle both HTML (RichTextEditor) and plain text (seed data / legacy)
+          const rawContent = chapter.content || ''
+          const hasHtmlTags = /<[a-z][\s\S]*>/i.test(rawContent)
+          const contentText = rawContent
+            ? hasHtmlTags
+              ? rawContent
+              : rawContent
+                  .split(/\n\n+/)
+                  .map((p: string) => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
+                  .join('')
+            : '<p style="color:#71717a;font-style:italic;text-align:center;padding:2rem 0;">Este capítulo ainda não possui conteúdo.</p>'
 
           return (
             <div
@@ -858,3 +867,4 @@ export default function Reader() {
     </div>
   )
 }
+

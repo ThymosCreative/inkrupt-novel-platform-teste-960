@@ -59,7 +59,7 @@ export function Footer() {
             <h4 className="font-bold mb-4 text-white">Para Autores</h4>
             <ul className="space-y-2 text-sm text-zinc-400">
               <li>
-                <Link to="/write" className="hover:text-white transition-colors">
+                <Link to="/studio" className="hover:text-white transition-colors">
                   Centro de Criação
                 </Link>
               </li>
@@ -106,3 +106,4 @@ export function Footer() {
     </footer>
   )
 }
+

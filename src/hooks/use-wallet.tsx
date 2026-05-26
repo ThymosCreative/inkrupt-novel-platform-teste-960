@@ -402,8 +402,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
             : [...prev, { chapter_id: chapterId, unlocked_at: Date.now(), method }],
         )
         return true
-      } catch (err) {
-        // Ignored: chapter is not unlocked
+      } catch {
+        // Not yet unlocked — continue to deduct cost and create the record
       }
 
       if (method === 'fast_pass') {

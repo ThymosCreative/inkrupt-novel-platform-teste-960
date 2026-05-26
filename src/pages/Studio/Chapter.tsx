@@ -25,9 +25,29 @@ type AuthorTier = 'starter' | 'partner' | 'original'
  * tag names, not attributes.
  */
 const ALLOWED_TAGS = new Set([
-  'p', 'br', 'b', 'strong', 'i', 'em', 'u', 's', 'strike', 'del',
-  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote',
-  'span', 'div', 'a',
+  'p',
+  'br',
+  'b',
+  'strong',
+  'i',
+  'em',
+  'u',
+  's',
+  'strike',
+  'del',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'ul',
+  'ol',
+  'li',
+  'blockquote',
+  'span',
+  'div',
+  'a',
 ])
 
 function sanitizeHtml(html: string): string {
@@ -71,9 +91,7 @@ const tierCanUseType = (tier: AuthorTier, type: ChapterType): boolean => {
 
 const tierLockReason = (tier: AuthorTier, type: ChapterType): string => {
   if (type === 'premium') {
-    return tier === 'starter'
-      ? 'Assine o contrato de monetização para criar capítulos Premium'
-      : ''
+    return tier === 'starter' ? 'Assine o contrato de monetização para criar capítulos Premium' : ''
   }
   if (type === 'privilege') {
     return tier === 'original'
@@ -120,8 +138,7 @@ export default function StudioChapter() {
         setChapter(record)
         // Migrate legacy is_premium → type if record.type is unset
         const initialType: ChapterType =
-          (record.type as ChapterType) ||
-          (record.is_premium ? 'premium' : 'free')
+          (record.type as ChapterType) || (record.is_premium ? 'premium' : 'free')
 
         setFormData((prev) => ({
           title: record.title || '',

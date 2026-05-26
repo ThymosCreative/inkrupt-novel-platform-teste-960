@@ -49,12 +49,12 @@
 ### Sistema de tiers de autor (implementado junto com F2-1)
 
 > Cada autor tem um `author_tier` na collection `users` que define o que ele pode publicar:
+>
 > - **`starter`** — Autor aprovado, sem contrato. Publica apenas capítulos `free`.
 > - **`partner`** — Autor com contrato de monetização. Publica `free` + `premium`. Recebe 50% dos Coins.
 > - **`original`** — Autor Inkrupt Original (curado). Publica `free` + `premium` + `privilege`. Recebe 50% dos Coins + 50% das assinaturas Privilege.
 >
 > Por enquanto a promoção entre tiers é feita manualmente pelo admin no painel do PocketBase. Painel próprio na Fase 8.
-
 
 > O coração do modelo de negócio. **Sem isso não existe plataforma sustentável.**
 

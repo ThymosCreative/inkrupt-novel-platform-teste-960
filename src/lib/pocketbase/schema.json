@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-26T16:22:42.544Z",
+  "generatedAt": "2026-05-26T18:36:34.979Z",
   "collections": [
     {
       "name": "users",
@@ -94,6 +94,19 @@
         },
         {
           "name": "last_vote_reward",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "author_tier",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["starter", "partner", "original"]
+        },
+        {
+          "name": "author_balance",
           "type": "number",
           "required": false,
           "system": false

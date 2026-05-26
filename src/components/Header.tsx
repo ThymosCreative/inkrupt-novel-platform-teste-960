@@ -136,13 +136,11 @@ export function Header() {
 
   const markAllAsRead = async () => {
     const unread = notifications.filter((n) => !n.is_read)
-    for (const n of unread) {
-      try {
-        await pb.collection('notifications').update(n.id, { is_read: true })
-      } catch {
-        /* intentionally ignored */
-      }
-    }
+    await Promise.all(
+      unread.map((n) =>
+        pb.collection('notifications').update(n.id, { is_read: true }).catch(() => {}),
+      ),
+    )
     loadNotifications()
   }
 
@@ -743,4 +741,5 @@ export function Header() {
     </>
   )
 }
+
 

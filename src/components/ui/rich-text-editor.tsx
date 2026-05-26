@@ -275,7 +275,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
         )}
         <div
           ref={editorRef}
-          className="h-full p-6 md:p-8 outline-none overflow-y-auto prose dark:prose-invert max-w-none focus:outline-none text-base md:text-lg leading-relaxed font-serif"
+          className="h-full p-6 md:p-8 outline-none overflow-y-auto prose dark:prose-invert max-w-none focus:outline-none text-base md:text-lg leading-relaxed font-serif [&_*]:!bg-transparent [&_*]:!shadow-none"
           contentEditable
           onInput={handleInput}
           onPaste={handlePaste}

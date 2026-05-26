@@ -286,4 +286,3 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
     </div>
   )
 }
-

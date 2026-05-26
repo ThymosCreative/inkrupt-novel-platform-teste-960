@@ -82,7 +82,13 @@ const applyLevelUp = (
   gainedExp: number,
   currentFps: FastPass[],
   currentStones: number,
-): { newExp: number; newLevel: number; newFps: FastPass[]; newStones: number; levelled: boolean } => {
+): {
+  newExp: number
+  newLevel: number
+  newFps: FastPass[]
+  newStones: number
+  levelled: boolean
+} => {
   const oldLevel = getLevel(currentExp)
   const newExp = currentExp + gainedExp
   const newLevel = getLevel(newExp)
@@ -172,9 +178,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       })
       // Replace optimistic entry with real record id
       setTransactions((prev) =>
-        prev.map((t) =>
-          t === optimistic ? { ...optimistic, id: record.id } : t,
-        ),
+        prev.map((t) => (t === optimistic ? { ...optimistic, id: record.id } : t)),
       )
     } catch (e) {
       console.error('[addTransaction]', e)
@@ -238,7 +242,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       wallet.fast_passes,
       wallet.power_stones,
     )
-    if (levelled) setTimeout(() => toast.success(`Parabéns! Você subiu para o Nível ${newLevel}!`), 500)
+    if (levelled)
+      setTimeout(() => toast.success(`Parabéns! Você subiu para o Nível ${newLevel}!`), 500)
     try {
       await pb.collection('users').update(user.id, {
         exp: newExp,
@@ -272,7 +277,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     const checkinFp: FastPass = { amount: 1, expires_at: Date.now() + 7 * 86400000 }
     const finalFps = [...newFps, checkinFp]
 
-    if (levelled) setTimeout(() => toast.success(`Parabéns! Você subiu para o Nível ${newLevel}!`), 500)
+    if (levelled)
+      setTimeout(() => toast.success(`Parabéns! Você subiu para o Nível ${newLevel}!`), 500)
 
     pb.collection('users')
       .update(user.id, {
@@ -339,7 +345,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       const nextFps = [...newFps, ...extraFp]
       const nextStones = newStones - 1
 
-      if (levelled) setTimeout(() => toast.success(`Parabéns! Você subiu para o Nível ${newLevel}!`), 500)
+      if (levelled)
+        setTimeout(() => toast.success(`Parabéns! Você subiu para o Nível ${newLevel}!`), 500)
 
       await pb.collection('users').update(user.id, {
         power_stones: nextStones,
@@ -427,7 +434,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
           wallet.fast_passes,
           wallet.power_stones,
         )
-        if (levelled) setTimeout(() => toast.success(`Parabéns! Você subiu para o Nível ${newLevel}!`), 500)
+        if (levelled)
+          setTimeout(() => toast.success(`Parabéns! Você subiu para o Nível ${newLevel}!`), 500)
 
         const updates: Record<string, unknown> = {
           coins: wallet.coins - cost,

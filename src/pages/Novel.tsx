@@ -1113,5 +1113,3 @@ export default function Novel() {
     </div>
   )
 }
-
-

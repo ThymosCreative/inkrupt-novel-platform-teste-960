@@ -18,8 +18,7 @@ routerAdd(
     }
 
     // Support both is_premium (legacy bool) and type (new SelectField)
-    const isPremium =
-      chapter.getBool('is_premium') || chapter.getString('type') === 'premium'
+    const isPremium = chapter.getBool('is_premium') || chapter.getString('type') === 'premium'
     if (!isPremium) {
       return e.badRequestError('chapter is not premium')
     }
@@ -53,8 +52,7 @@ routerAdd(
           let fastPasses = []
           try {
             if (rawFp != null) {
-              const fpStr =
-                typeof rawFp === 'string' ? rawFp : JSON.stringify(rawFp)
+              const fpStr = typeof rawFp === 'string' ? rawFp : JSON.stringify(rawFp)
               if (fpStr && fpStr !== 'null') {
                 const parsed = JSON.parse(fpStr)
                 if (Array.isArray(parsed)) fastPasses = parsed

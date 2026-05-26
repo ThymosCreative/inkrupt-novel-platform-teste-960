@@ -129,7 +129,8 @@ export default function StudioNovel() {
   const createChapter = async () => {
     if (!id) return
     try {
-      const nextNum = chapters.length > 0 ? Math.max(...chapters.map((c: any) => c.chapter_number)) + 1 : 1
+      const nextNum =
+        chapters.length > 0 ? Math.max(...chapters.map((c: any) => c.chapter_number)) + 1 : 1
       const record = await pb.collection('chapters').create({
         novel: id,
         title: `Capítulo ${nextNum}`,
@@ -367,5 +368,3 @@ export default function StudioNovel() {
     </div>
   )
 }
-
-

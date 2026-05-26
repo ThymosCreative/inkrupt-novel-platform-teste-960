@@ -138,7 +138,10 @@ export function Header() {
     const unread = notifications.filter((n) => !n.is_read)
     await Promise.all(
       unread.map((n) =>
-        pb.collection('notifications').update(n.id, { is_read: true }).catch(() => {}),
+        pb
+          .collection('notifications')
+          .update(n.id, { is_read: true })
+          .catch(() => {}),
       ),
     )
     loadNotifications()
@@ -741,5 +744,3 @@ export function Header() {
     </>
   )
 }
-
-

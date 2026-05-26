@@ -15,7 +15,12 @@ migrate(
       fields: [
         new RelationField({ name: 'user', collectionId: '_pb_users_auth_', required: true }),
         new NumberField({ name: 'amount', required: true }),
-        new SelectField({ name: 'type', values: ['coin', 'fast_pass', 'exp'], maxSelect: 1, required: true }),
+        new SelectField({
+          name: 'type',
+          values: ['coin', 'fast_pass', 'exp'],
+          maxSelect: 1,
+          required: true,
+        }),
         new TextField({ name: 'description', required: true }),
       ],
     })
@@ -41,7 +46,11 @@ migrate(
     app.save(votesCol)
   },
   (app) => {
-    try { app.delete(app.findCollectionByNameOrId('transactions')) } catch (_) {}
-    try { app.delete(app.findCollectionByNameOrId('novel_votes')) } catch (_) {}
+    try {
+      app.delete(app.findCollectionByNameOrId('transactions'))
+    } catch (_) {}
+    try {
+      app.delete(app.findCollectionByNameOrId('novel_votes'))
+    } catch (_) {}
   },
 )

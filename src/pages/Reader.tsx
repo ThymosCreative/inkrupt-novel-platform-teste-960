@@ -697,9 +697,29 @@ export default function Reader() {
           // Bold/italic/underline/headings survive because they're carried by
           // tag names, not attributes.
           const ALLOWED = new Set([
-            'p','br','b','strong','i','em','u','s','strike','del',
-            'h1','h2','h3','h4','h5','h6','ul','ol','li','blockquote',
-            'span','div','a',
+            'p',
+            'br',
+            'b',
+            'strong',
+            'i',
+            'em',
+            'u',
+            's',
+            'strike',
+            'del',
+            'h1',
+            'h2',
+            'h3',
+            'h4',
+            'h5',
+            'h6',
+            'ul',
+            'ol',
+            'li',
+            'blockquote',
+            'span',
+            'div',
+            'a',
           ])
           const sanitize = (html: string): string => {
             if (typeof window === 'undefined' || !window.DOMParser) return html
@@ -707,9 +727,7 @@ export default function Reader() {
             const walk = (node: Element) => {
               Array.from(node.children).forEach((child) => {
                 // Remove every attribute on every element.
-                Array.from(child.attributes).forEach((a) =>
-                  child.removeAttribute(a.name),
-                )
+                Array.from(child.attributes).forEach((a) => child.removeAttribute(a.name))
                 const tag = child.tagName.toLowerCase()
                 if (tag === 'style' || tag === 'meta' || tag === 'script' || tag === 'link') {
                   child.remove()
@@ -926,5 +944,3 @@ export default function Reader() {
     </div>
   )
 }
-
-

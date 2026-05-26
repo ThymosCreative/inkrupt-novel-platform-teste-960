@@ -165,4 +165,3 @@ export function NovelCard({ novel, layout = 'vertical', className }: NovelCardPr
     </Link>
   )
 }
-

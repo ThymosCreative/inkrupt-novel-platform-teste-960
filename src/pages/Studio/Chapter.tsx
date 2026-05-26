@@ -21,9 +21,29 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor'
  * tag names, not attributes.
  */
 const ALLOWED_TAGS = new Set([
-  'p', 'br', 'b', 'strong', 'i', 'em', 'u', 's', 'strike', 'del',
-  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote',
-  'span', 'div', 'a',
+  'p',
+  'br',
+  'b',
+  'strong',
+  'i',
+  'em',
+  'u',
+  's',
+  'strike',
+  'del',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'ul',
+  'ol',
+  'li',
+  'blockquote',
+  'span',
+  'div',
+  'a',
 ])
 
 function sanitizeHtml(html: string): string {
@@ -235,4 +255,3 @@ export default function StudioChapter() {
     </div>
   )
 }
-

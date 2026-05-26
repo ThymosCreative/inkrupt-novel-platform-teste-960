@@ -688,15 +688,56 @@ export default function Reader() {
           // Handle both HTML (RichTextEditor) and plain text (seed data / legacy)
           const rawContent = chapter.content || ''
           const hasHtmlTags = /<[a-z][\s\S]*>/i.test(rawContent)
-          // Strip inline styles injected by external editors (Google Docs, Word, etc.)
-          // before rendering so they don't bleed through as white boxes on dark themes.
-          const sanitize = (h: string) =>
-            h
-              .replace(/\s+style="[^"]*"/gi, '')
-              .replace(/\s+bgcolor="[^"]*"/gi, '')
-              .replace(/\s+color="[^"]*"/gi, '')
-              .replace(/<font[^>]*>/gi, '')
-              .replace(/<\/font>/gi, '')
+
+          // Aggressive DOMParser-based sanitisation. We strip EVERY attribute
+          // from EVERY tag (style, class, id, dir, lang, bgcolor, color, etc.)
+          // and unwrap <font> / <style> / <meta> tags entirely. This guarantees
+          // that pasted Google Docs / Word HTML never leaks visual formatting
+          // (white backgrounds, custom fonts, hard-coded colors) into the reader.
+          // Bold/italic/underline/headings survive because they're carried by
+          // tag names, not attributes.
+          const ALLOWED = new Set([
+            'p','br','b','strong','i','em','u','s','strike','del',
+            'h1','h2','h3','h4','h5','h6','ul','ol','li','blockquote',
+            'span','div','a',
+          ])
+          const sanitize = (html: string): string => {
+            if (typeof window === 'undefined' || !window.DOMParser) return html
+            const doc = new DOMParser().parseFromString(html, 'text/html')
+            const walk = (node: Element) => {
+              Array.from(node.children).forEach((child) => {
+                // Remove every attribute on every element.
+                Array.from(child.attributes).forEach((a) =>
+                  child.removeAttribute(a.name),
+                )
+                const tag = child.tagName.toLowerCase()
+                if (tag === 'style' || tag === 'meta' || tag === 'script' || tag === 'link') {
+                  child.remove()
+                  return
+                }
+                if (tag === 'font') {
+                  // Replace <font> with <span>, preserving inner HTML
+                  const span = doc.createElement('span')
+                  span.innerHTML = child.innerHTML
+                  child.replaceWith(span)
+                  walk(span)
+                  return
+                }
+                if (!ALLOWED.has(tag)) {
+                  // Unknown tag → unwrap (replace with its inner HTML)
+                  const span = doc.createElement('span')
+                  span.innerHTML = child.innerHTML
+                  child.replaceWith(span)
+                  walk(span)
+                  return
+                }
+                walk(child)
+              })
+            }
+            walk(doc.body)
+            return doc.body.innerHTML
+          }
+
           const contentText = rawContent
             ? hasHtmlTags
               ? sanitize(rawContent)
@@ -704,16 +745,16 @@ export default function Reader() {
                   .split(/\n\n+/)
                   .map((p: string) => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
                   .join('')
-            : '<p style="color:#71717a;font-style:italic;text-align:center;padding:2rem 0;">Este capítulo ainda não possui conteúdo.</p>'
+            : '<p>Este capítulo ainda não possui conteúdo.</p>'
 
           return (
             <div
               className={cn(
                 'transition-all duration-300 [&>p]:mb-6 [&>div]:mb-6',
-                // Force all descendant elements to inherit colors & transparent backgrounds.
-                // This overrides inline styles that external editors (Google Docs, Word)
-                // embed in pasted HTML (e.g. style="background:white;color:black").
-                '[&_*]:!bg-transparent [&_*]:!text-inherit [&_*]:!shadow-none',
+                // Belt-and-suspenders: even if sanitize() somehow missed a style,
+                // these utility classes force transparent backgrounds and
+                // inherited colors on every descendant element.
+                '[&_*]:!bg-transparent [&_*]:!text-inherit [&_*]:!shadow-none [&_*]:!border-0',
                 settings.fontFamily === 'serif' ? 'font-serif' : 'font-sans',
               )}
               style={{

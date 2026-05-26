@@ -615,6 +615,11 @@ export default function Reader() {
               }
               const success = await unlockChapter(chapter.id, method, cost)
               if (success) {
+                // Re-fetch the chapter so we get the full content now that it's unlocked
+                try {
+                  const fresh = await getChapterByNum(id!, chapterNum)
+                  setChapter(fresh)
+                } catch (_) {}
                 setIsUnlockedLocal(true)
                 toast.success('Capítulo desbloqueado!')
               } else {
@@ -867,4 +872,5 @@ export default function Reader() {
     </div>
   )
 }
+
 

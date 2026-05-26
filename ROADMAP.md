@@ -38,7 +38,7 @@
 
 - [x] **[F1-5]** Corrigir ~10 strings em inglês para PT-BR (`Novel.tsx`, `use-wallet.tsx`)
 - [x] **[F1-6]** Extrair lógica de level-up duplicada (4x em `use-wallet.tsx`) para função `applyLevelUp()` reutilizável
-- [ ] **[F1-7]** Mover histórico de `transactions` do `localStorage` para coleção no PocketBase
+- [x] **[F1-7]** Mover histórico de `transactions` do `localStorage` para coleção no PocketBase
 - [x] **[F1-8]** Corrigir `markAllAsRead` no `Header.tsx` para usar `Promise.all` em vez de loop sequencial
 - [x] **[F1-9]** Corrigir links quebrados no `Footer.tsx` (rota `/write` não existe)
 
@@ -46,16 +46,26 @@
 
 ## 🟠 FASE 2 — Monetização Real
 
+### Sistema de tiers de autor (implementado junto com F2-1)
+
+> Cada autor tem um `author_tier` na collection `users` que define o que ele pode publicar:
+> - **`starter`** — Autor aprovado, sem contrato. Publica apenas capítulos `free`.
+> - **`partner`** — Autor com contrato de monetização. Publica `free` + `premium`. Recebe 50% dos Coins.
+> - **`original`** — Autor Inkrupt Original (curado). Publica `free` + `premium` + `privilege`. Recebe 50% dos Coins + 50% das assinaturas Privilege.
+>
+> Por enquanto a promoção entre tiers é feita manualmente pelo admin no painel do PocketBase. Painel próprio na Fase 8.
+
+
 > O coração do modelo de negócio. **Sem isso não existe plataforma sustentável.**
 
 ### 2.1 Tipos de capítulo bem definidos
 
-- [ ] **[F2-1]** Padronizar os 3 tipos de capítulo em todo o código:
+- [x] **[F2-1]** Padronizar os 3 tipos de capítulo em todo o código:
   - `free` → Grátis para todos
   - `premium` → Desbloqueio por Coins ou Fast Pass
   - `privilege` → Acesso antecipado via assinatura (capítulos futuros)
-- [ ] **[F2-2]** Corrigir `Reader.tsx` para tratar os 3 tipos corretamente (atualmente só checa `is_premium` boolean)
-- [ ] **[F2-3]** UI na listagem de capítulos mostrando claramente o tipo de cada capítulo
+- [x] **[F2-2]** Corrigir `Reader.tsx` para tratar os 3 tipos corretamente (atualmente só checa `is_premium` boolean)
+- [x] **[F2-3]** UI na listagem de capítulos mostrando claramente o tipo de cada capítulo
 
 ### 2.2 Integração de pagamento (Gateway)
 

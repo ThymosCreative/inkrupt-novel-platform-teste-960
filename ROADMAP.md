@@ -38,7 +38,7 @@
 
 - [x] **[F1-5]** Corrigir ~10 strings em inglês para PT-BR (`Novel.tsx`, `use-wallet.tsx`)
 - [x] **[F1-6]** Extrair lógica de level-up duplicada (4x em `use-wallet.tsx`) para função `applyLevelUp()` reutilizável
-- [ ] **[F1-7]** Mover histórico de `transactions` do `localStorage` para coleção no PocketBase
+- [x] **[F1-7]** Mover histórico de `transactions` do `localStorage` para coleção no PocketBase
 - [x] **[F1-8]** Corrigir `markAllAsRead` no `Header.tsx` para usar `Promise.all` em vez de loop sequencial
 - [x] **[F1-9]** Corrigir links quebrados no `Footer.tsx` (rota `/write` não existe)
 

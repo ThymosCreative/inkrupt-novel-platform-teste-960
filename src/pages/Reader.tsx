@@ -619,7 +619,9 @@ export default function Reader() {
                 try {
                   const fresh = await getChapterByNum(id!, chapterNum)
                   setChapter(fresh)
-                } catch (_) {}
+                } catch {
+                  // If re-fetch fails, the user can refresh manually — non-fatal
+                }
                 setIsUnlockedLocal(true)
                 toast.success('Capítulo desbloqueado!')
               } else {

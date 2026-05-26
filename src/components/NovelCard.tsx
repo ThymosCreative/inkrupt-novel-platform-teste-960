@@ -16,7 +16,7 @@ export function NovelCard({ novel, layout = 'vertical', className }: NovelCardPr
 
   const authorName = novel.expand?.author?.name || 'Autor'
   const coverUrl = getCoverUrl(novel)
-  const isOriginal = novel.type === 'Original'
+  const isInkruptOriginal = novel.type === 'Inkrupt Original'
 
   if (layout === 'dense') {
     return (
@@ -137,9 +137,9 @@ export function NovelCard({ novel, layout = 'vertical', className }: NovelCardPr
             <Coins className="w-3 h-3" />
           </Badge>
         )}
-        {isOriginal && !novel.has_premium && (
-          <Badge className="absolute top-2 right-2 bg-white text-black border-none text-[10px] px-1.5">
-            ORIGINAL
+        {isInkruptOriginal && !novel.has_premium && (
+          <Badge className="absolute top-2 right-2 bg-lime-400 text-black border-none text-[10px] px-1.5 font-black">
+            INKRUPT
           </Badge>
         )}
       </div>
@@ -165,3 +165,4 @@ export function NovelCard({ novel, layout = 'vertical', className }: NovelCardPr
     </Link>
   )
 }
+

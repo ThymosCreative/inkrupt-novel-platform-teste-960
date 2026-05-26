@@ -36,14 +36,17 @@ export default function StudioChapter() {
       .getOne(chapterId, { expand: 'novel' })
       .then((record) => {
         setChapter(record)
-        setFormData({
+        setFormData((prev) => ({
           title: record.title || '',
-          content: record.content || '',
+          // If the API returns empty content but we already have content in the editor
+          // (e.g. enrich_chapters hook stripped it for a published premium chapter),
+          // keep the existing editor content rather than wiping it.
+          content: record.content || prev.content || '',
           chapter_number: record.chapter_number || 1,
           status: record.status || 'draft',
           is_premium: !!record.is_premium,
           coin_price: record.coin_price || 0,
-        })
+        }))
       })
       .catch((err) => {
         console.error(err)
@@ -65,6 +68,17 @@ export default function StudioChapter() {
         .collection('chapters')
         .update(chapterId, dataToSave, { expand: 'novel' })
       setChapter(updated)
+      // After save, sync formData with server response — but preserve content
+      // if the server returned it empty (hook stripping for published premium chapters)
+      setFormData((prev) => ({
+        ...prev,
+        title: updated.title || prev.title,
+        content: updated.content || prev.content,
+        chapter_number: updated.chapter_number || prev.chapter_number,
+        status: updated.status || prev.status,
+        is_premium: !!updated.is_premium,
+        coin_price: updated.coin_price || 0,
+      }))
       toast({ title: 'Capítulo salvo com sucesso' })
     } catch (err) {
       setErrors(extractFieldErrors(err))
@@ -180,3 +194,4 @@ export default function StudioChapter() {
     </div>
   )
 }
+

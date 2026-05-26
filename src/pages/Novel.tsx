@@ -288,7 +288,7 @@ export default function Novel() {
   const handleSubmitReview = async () => {
     const errors: { rating?: string; content?: string } = {}
     if (reviewRating < 1 || reviewRating > 5) {
-      errors.rating = 'Please select a rating between 1 and 5 stars.'
+      errors.rating = 'Selecione uma avaliação entre 1 e 5 estrelas.'
     }
     if (!reviewContent.trim()) {
       errors.content = 'Review content is required.'
@@ -930,7 +930,7 @@ export default function Novel() {
                 ))}
                 {reviews.length === 0 && (
                   <div className="text-center text-zinc-500 py-8">
-                    No reviews yet. Be the first to share your thoughts!
+                    Nenhuma avaliação ainda. Seja o primeiro a compartilhar!
                   </div>
                 )}
               </div>
@@ -1113,4 +1113,5 @@ export default function Novel() {
     </div>
   )
 }
+
 

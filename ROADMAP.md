@@ -26,17 +26,17 @@
 > O projeto deve refletir a proposta: **somente obras autorais**. Sem traduções.
 
 ### 1.1 Nomenclatura e tipos de obra
-- [ ] **[F1-1]** Remover tipo `"Tradução"` de `Search.tsx` (filtro), `Studio/Novel.tsx` (select) e `api.ts`
-- [ ] **[F1-2]** Renomear tipo `"Original"` para `"Inkrupt Original"` no banco e em todo o código
-- [ ] **[F1-3]** Adicionar tipo `"Independente"` para obras de autores aprovados não-curados
-- [ ] **[F1-4]** Atualizar badge no `NovelCard.tsx`: "INKRUPT" para obras curadas, sem badge para Independente
+- [x] **[F1-1]** Remover tipo `"Tradução"` de `Search.tsx` (filtro), `Studio/Novel.tsx` (select) e `api.ts`
+- [x] **[F1-2]** Renomear tipo `"Original"` para `"Inkrupt Original"` no banco e em todo o código
+- [x] **[F1-3]** Adicionar tipo `"Independente"` para obras de autores aprovados não-curados
+- [x] **[F1-4]** Atualizar badge no `NovelCard.tsx`: "INKRUPT" para obras curadas, sem badge para Independente
 
 ### 1.2 Limpeza de código
-- [ ] **[F1-5]** Corrigir ~10 strings em inglês para PT-BR (`Novel.tsx`, `ChapterComments.tsx`, `Reader.tsx`)
-- [ ] **[F1-6]** Extrair lógica de level-up duplicada (4x em `use-wallet.tsx`) para função `applyLevelUp()` reutilizável
+- [x] **[F1-5]** Corrigir ~10 strings em inglês para PT-BR (`Novel.tsx`, `use-wallet.tsx`)
+- [x] **[F1-6]** Extrair lógica de level-up duplicada (4x em `use-wallet.tsx`) para função `applyLevelUp()` reutilizável
 - [ ] **[F1-7]** Mover histórico de `transactions` do `localStorage` para coleção no PocketBase
-- [ ] **[F1-8]** Corrigir `markAllAsRead` no `Header.tsx` para usar `Promise.all` em vez de loop sequencial
-- [ ] **[F1-9]** Corrigir links quebrados no `Footer.tsx` (rota `/write` não existe)
+- [x] **[F1-8]** Corrigir `markAllAsRead` no `Header.tsx` para usar `Promise.all` em vez de loop sequencial
+- [x] **[F1-9]** Corrigir links quebrados no `Footer.tsx` (rota `/write` não existe)
 
 ---
 
@@ -165,4 +165,5 @@ Mês 2:       Fases 6, 7, 8
 
 ---
 
-*Última atualização: 2026-05-25*
+*Última atualização: 2026-05-26*
+

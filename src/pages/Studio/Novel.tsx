@@ -60,7 +60,7 @@ export default function StudioNovel() {
         title: record.title || '',
         description: record.description || '',
         status: record.status || 'Em Andamento',
-        type: record.type || 'Original',
+        type: record.type || 'Inkrupt Original',
         genres: record.genres || [],
       })
 
@@ -261,8 +261,8 @@ export default function StudioNovel() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Original">Original</SelectItem>
-                      <SelectItem value="Tradução">Tradução</SelectItem>
+                      <SelectItem value="Inkrupt Original">Inkrupt Original</SelectItem>
+                      <SelectItem value="Independente">Independente</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -367,4 +367,5 @@ export default function StudioNovel() {
     </div>
   )
 }
+
 

@@ -42,7 +42,7 @@ interface WalletContextType {
   transactions: Transaction[]
   unlockedChapters: UnlockedChapter[]
   votes: Vote[]
-  buyCoins: (amount: number, price: number) => Promise<void>
+  buyCoins: (packageId: string) => Promise<boolean>
   addExp: (amount: number, reason: string) => Promise<void>
   voteNovel: (novelId: string) => Promise<boolean>
   unlockChapter: (chapterId: string, method: 'coin' | 'fast_pass', cost: number) => Promise<boolean>
@@ -301,15 +301,51 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
 
-  const buyCoins = async (amount: number, price: number) => {
-    if (!user) return
+  /**
+   * Purchase a Coin package through the secure backend endpoint.
+   *
+   * The endpoint (`/backend/v1/purchase-coins`) is the single source of truth
+   * for crediting coins — the frontend can no longer write to `users.coins`
+   * directly. Validation, pricing and crediting all happen on the server.
+   *
+   * Returns true on successful purchase, false on any error.
+   */
+  const buyCoins = async (packageId: string): Promise<boolean> => {
+    if (!user) {
+      toast.error('Faça login para comprar coins.')
+      return false
+    }
     try {
-      await pb.collection('users').update(user.id, { coins: wallet.coins + amount })
-      await addTransaction(amount, 'coin', `Compra de Pacote (R$ ${price.toFixed(2)})`)
-      toast.success(`${amount} Coins comprados com sucesso!`)
-    } catch (e) {
-      console.error(e)
-      toast.error('Erro ao comprar coins.')
+      const res: any = await pb.send('/backend/v1/purchase-coins', {
+        method: 'POST',
+        body: JSON.stringify({ package_id: packageId }),
+      })
+
+      if (!res?.success) {
+        toast.error('Erro ao comprar coins.')
+        return false
+      }
+
+      const coinsCredited = res.coins_credited as number
+      const priceCents = res.price_paid_brl_cents as number
+      const priceBrl = (priceCents / 100).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      })
+
+      // Log the transaction in our history (separate from coin_purchases —
+      // transactions are user-visible, coin_purchases are accounting).
+      await addTransaction(coinsCredited, 'coin', `Compra de Pacote (${priceBrl})`)
+
+      // Re-sync the user record so wallet.coins reflects the new balance.
+      await pb.collection('users').authRefresh().catch(console.error)
+
+      toast.success(`${coinsCredited} Coins creditados com sucesso!`)
+      return true
+    } catch (e: any) {
+      console.error('[buyCoins]', e)
+      toast.error(e?.message || 'Erro ao comprar coins.')
+      return false
     }
   }
 

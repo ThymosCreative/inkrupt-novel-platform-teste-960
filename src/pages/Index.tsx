@@ -49,25 +49,20 @@ export default function Index() {
 
       <div className="container mx-auto px-4 mt-12 space-y-16">
         <section>
-          <ScrollArea className="w-full whitespace-nowrap pb-4">
-            <div className="flex w-max space-x-4 p-1">
-              {CATEGORIES.map((c) => (
-                <Link
-                  to={`/search?genre=${encodeURIComponent(c.name)}`}
-                  key={c.name}
-                  className="flex flex-col items-center gap-3 p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/50 hover:bg-zinc-800 hover:border-lime-500/30 transition-all w-28 group"
-                >
-                  <div className="p-3 bg-zinc-950 rounded-xl group-hover:scale-110 group-hover:bg-lime-400/10 transition-transform">
-                    <c.icon className="w-6 h-6 text-zinc-400 group-hover:text-lime-400 transition-colors" />
-                  </div>
-                  <span className="text-xs text-center font-medium text-zinc-300 group-hover:text-white">
-                    {c.name}
-                  </span>
-                </Link>
-              ))}
-            </div>
-            <ScrollBar orientation="horizontal" className="invisible hover:visible" />
-          </ScrollArea>
+          <div className="flex flex-wrap gap-3">
+            {CATEGORIES.map((c) => (
+              <Link
+                to={`/search?genre=${encodeURIComponent(c.name)}`}
+                key={c.name}
+                className="inline-flex w-fit items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/80 border border-zinc-800/80 hover:bg-zinc-800 hover:border-lime-500/50 transition-all group cursor-pointer"
+              >
+                <c.icon className="w-4 h-4 text-zinc-400 group-hover:text-lime-400 transition-colors" />
+                <span className="text-sm font-medium text-zinc-300 group-hover:text-white transition-colors">
+                  {c.name}
+                </span>
+              </Link>
+            ))}
+          </div>
         </section>
         <section>
           <SectionHeader

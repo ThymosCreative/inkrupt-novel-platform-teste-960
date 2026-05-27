@@ -43,7 +43,10 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
   }, [onChange])
 
   // Strip all external formatting on paste — keep only plain text structure.
-  // This prevents Google Docs / Word fonts, colors and backgrounds from leaking in.
+  // Uses execCommand('insertHTML') because it handles the full set of edge
+  // cases that manual Range API doesn't (empty editor / no current selection
+  // / pasted content inside nested elements). `insertHTML` is deprecated but
+  // remains the only cross-browser-reliable contentEditable insertion API.
   const handlePaste = useCallback(
     (e: React.ClipboardEvent<HTMLDivElement>) => {
       e.preventDefault()
@@ -53,10 +56,9 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
 
       if (!text) {
         const html = e.clipboardData.getData('text/html')
-        // Strip all tags, decode basic HTML entities
         text = html
           .replace(/<br\s*\/?>/gi, '\n')
-          .replace(/<\/p>/gi, '\n')
+          .replace(/<\/p>/gi, '\n\n')
           .replace(/<[^>]+>/g, '')
           .replace(/&nbsp;/g, ' ')
           .replace(/&amp;/g, '&')
@@ -67,41 +69,31 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
 
       // Trim excessive blank lines (3+ consecutive → 2)
       text = text.replace(/\n{3,}/g, '\n\n').trim()
+      if (!text) return
 
-      // Insert as plain text at the current cursor position
-      const selection = window.getSelection()
-      if (!selection || !selection.rangeCount) return
+      // Build clean HTML with <p> paragraphs and <br> inside.
+      // Escape HTML special chars so pasted "<script>" or "&amp;" don't break.
+      const escapeHtml = (s: string) =>
+        s
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;')
 
-      selection.deleteFromDocument()
-      const range = selection.getRangeAt(0)
+      const html = text
+        .split(/\n\n+/)
+        .map((para) => `<p>${escapeHtml(para).replace(/\n/g, '<br>')}</p>`)
+        .join('')
 
-      // Split by double newlines (paragraphs) and insert <p> nodes
-      const paragraphs = text.split(/\n\n+/)
-      const fragment = document.createDocumentFragment()
+      // Make sure the editor is focused before inserting (handles pasting
+      // immediately after clicking the editor without a typed character yet).
+      if (editorRef.current && document.activeElement !== editorRef.current) {
+        editorRef.current.focus()
+      }
 
-      paragraphs.forEach((para, i) => {
-        const p = document.createElement('p')
-        // Handle single line breaks within a paragraph
-        const lines = para.split('\n')
-        lines.forEach((line, j) => {
-          p.appendChild(document.createTextNode(line))
-          if (j < lines.length - 1) p.appendChild(document.createElement('br'))
-        })
-        fragment.appendChild(p)
-        // Add blank paragraph between paragraphs (keeps double-enter spacing)
-        if (i < paragraphs.length - 1) {
-          const spacer = document.createElement('p')
-          spacer.appendChild(document.createElement('br'))
-          fragment.appendChild(spacer)
-        }
-      })
-
-      range.insertNode(fragment)
-
-      // Move cursor to end of inserted content
-      range.collapse(false)
-      selection.removeAllRanges()
-      selection.addRange(range)
+      // insertHTML handles selection/cursor placement internally
+      document.execCommand('insertHTML', false, html)
 
       if (editorRef.current) {
         onChange(editorRef.current.innerHTML)

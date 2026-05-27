@@ -1,21 +1,26 @@
+import { useState } from 'react'
 import { useWallet } from '@/hooks/use-wallet'
-import { Coins, Zap, Star, Clock } from 'lucide-react'
+import { Coins, Zap, Star, Clock, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { COIN_PACKAGES, formatBRL, type CoinPackage } from '@/lib/coin-packages'
+import { cn } from '@/lib/utils'
 
 export default function Store() {
   const { wallet, transactions, totalFastPasses, buyCoins } = useWallet()
-
-  const packages = [
-    { amount: 50, price: 4.9 },
-    { amount: 150, price: 12.9 },
-    { amount: 350, price: 24.9 },
-    { amount: 750, price: 44.9, featured: true },
-    { amount: 1500, price: 79.9 },
-  ]
+  const [purchasingId, setPurchasingId] = useState<string | null>(null)
 
   const nextExpiry = wallet.fast_passes
     .filter((fp) => fp.expires_at > Date.now())
     .sort((a, b) => a.expires_at - b.expires_at)[0]
+
+  const handleBuy = async (pkg: CoinPackage) => {
+    setPurchasingId(pkg.id)
+    try {
+      await buyCoins(pkg.id)
+    } finally {
+      setPurchasingId(null)
+    }
+  }
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
@@ -27,31 +32,54 @@ export default function Store() {
             <Coins className="w-5 h-5 text-amber-500" /> Comprar Coins
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {packages.map((pkg) => (
-              <div
-                key={pkg.amount}
-                className={`relative p-6 rounded-2xl border ${pkg.featured ? 'border-lime-400 bg-zinc-900' : 'border-zinc-800 bg-zinc-900'} flex items-center justify-between`}
-              >
-                {pkg.featured && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-lime-400 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
-                    Mais Popular
-                  </div>
-                )}
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center">
-                    <Coins className="w-6 h-6 text-amber-500" />
-                  </div>
-                  <div className="font-black text-xl">{pkg.amount}</div>
-                </div>
-                <Button
-                  onClick={() => buyCoins(pkg.amount, pkg.price)}
-                  className="bg-lime-400 text-black hover:bg-lime-500 font-bold"
+            {COIN_PACKAGES.map((pkg) => {
+              const busy = purchasingId === pkg.id
+              return (
+                <div
+                  key={pkg.id}
+                  className={cn(
+                    'relative p-6 rounded-2xl border bg-zinc-900 flex items-center justify-between transition-colors',
+                    pkg.featured ? 'border-lime-400' : 'border-zinc-800',
+                  )}
                 >
-                  R$ {pkg.price.toFixed(2).replace('.', ',')}
-                </Button>
-              </div>
-            ))}
+                  {pkg.featured && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-lime-400 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
+                      Mais Popular
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center shrink-0">
+                      <Coins className="w-6 h-6 text-amber-500" />
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="font-black text-xl leading-tight">{pkg.coins}</div>
+                      {pkg.bonus_pct ? (
+                        <div className="text-[10px] font-bold text-lime-400 uppercase tracking-wider">
+                          +{pkg.bonus_pct}% bônus
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => handleBuy(pkg)}
+                    disabled={busy}
+                    className="bg-lime-400 text-black hover:bg-lime-500 font-bold min-w-[90px]"
+                  >
+                    {busy ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      formatBRL(pkg.price_brl_cents)
+                    )}
+                  </Button>
+                </div>
+              )
+            })}
           </div>
+
+          <p className="text-xs text-muted-foreground mt-4">
+            Pagamento processado em modo de simulação durante o desenvolvimento. A integração com
+            gateway real (Mercado Pago / Stripe) chega na próxima fase.
+          </p>
         </div>
 
         <div>
@@ -102,7 +130,7 @@ export default function Store() {
             <div className="divide-y">
               {transactions.slice(0, 30).map((t, idx) => (
                 <div
-                  key={idx}
+                  key={t.id ?? idx}
                   className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
                 >
                   <div>
@@ -112,7 +140,10 @@ export default function Store() {
                     </div>
                   </div>
                   <div
-                    className={`font-bold flex items-center gap-1 ${t.amount > 0 ? 'text-green-500' : 'text-red-500'}`}
+                    className={cn(
+                      'font-bold flex items-center gap-1',
+                      t.amount > 0 ? 'text-green-500' : 'text-red-500',
+                    )}
                   >
                     {t.amount > 0 ? '+' : ''}
                     {t.amount}

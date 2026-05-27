@@ -121,6 +121,8 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
   const isEmpty = !value || value === '<br>' || value === '<p><br></p>'
 
   return (
+    // h-full + min-h-0 chain so the editor can shrink and scroll internally
+    // when placed inside a flex column parent.
     <div className={cn('flex flex-col h-full min-h-0 bg-card', className)}>
       <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-muted/30 shrink-0">
         <Button
@@ -267,33 +269,35 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
         </Button>
       </div>
 
-      <div className="flex-1 relative min-h-0 bg-card">
+      {/* Scroll wrapper: this is where overflow happens. The contentEditable
+          inside is `min-h-full` so it fills the visible area on short content
+          and grows past it (which the wrapper then scrolls) on long content. */}
+      <div className="flex-1 min-h-0 overflow-y-auto bg-card relative">
         {isEmpty && !isFocused && placeholder && (
-          <div className="absolute top-6 left-6 md:top-8 md:left-8 text-muted-foreground/60 pointer-events-none text-base md:text-lg italic">
+          <div className="absolute top-6 left-6 md:top-10 md:left-10 text-muted-foreground/60 pointer-events-none text-base md:text-lg italic z-10">
             {placeholder}
           </div>
         )}
         <div
           ref={editorRef}
           className={cn(
-            // Layout & scroll
-            'absolute inset-0 overflow-y-auto outline-none focus:outline-none',
+            // Take at least full visible height so empty editor is still clickable
+            'min-h-full outline-none focus:outline-none',
             // Padding & typography
             'p-6 md:p-10 text-base md:text-lg leading-[1.8] font-serif',
-            // Text colour: foreground, but slightly softened in dark mode for long-form reading
+            // Text colour: foreground, slightly softened for long-form reading
             'text-foreground/90',
-            // Paragraph spacing inside the editor
+            // Paragraph spacing
             '[&>p]:mb-5 [&>p:last-child]:mb-0',
-            // Headings inside the editor
+            // Headings
             '[&>h1]:text-3xl [&>h1]:font-bold [&>h1]:mb-4 [&>h1]:mt-2',
             '[&>h2]:text-2xl [&>h2]:font-bold [&>h2]:mb-3 [&>h2]:mt-6',
             '[&>h3]:text-xl [&>h3]:font-semibold [&>h3]:mb-2 [&>h3]:mt-4',
             // Lists
             '[&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-5',
             '[&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-5',
-            // Bulletproof reset: kill any inline styles pasted from external editors
+            // Bulletproof reset: kill inline styles from external editors
             '[&_*]:!bg-transparent [&_*]:!shadow-none [&_*]:!border-0',
-            // Force readable text colour on any pasted span/font tags
             '[&_*]:!text-inherit',
           )}
           contentEditable

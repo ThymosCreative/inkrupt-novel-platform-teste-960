@@ -119,10 +119,18 @@ export default function Reader() {
           setTotalChapters(clist.length)
 
           if (user && c) {
-            // getChapterCost handles both is_premium (legacy bool) and type field (migration 0027)
-            if (n.author === user.id || getChapterCost(c).type === 'free') {
+            const chType = getChapterCost(c).type
+            if (n.author === user.id || chType === 'free') {
               setIsUnlockedLocal(true)
+            } else if (chType === 'privilege') {
+              // Privilege chapters ONLY unlock via active subscription. Old
+              // unlocked_chapters records (from when the chapter was Premium)
+              // do NOT grant access — the chapter has a different contract now.
+              // Subscription system arrives in Phase 2.3; until then, Privilege
+              // chapters are always locked for non-authors.
+              setIsUnlockedLocal(false)
             } else {
+              // Premium: check if user previously bought this chapter
               try {
                 await pb
                   .collection('unlocked_chapters')

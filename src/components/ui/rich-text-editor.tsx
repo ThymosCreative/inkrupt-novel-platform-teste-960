@@ -121,8 +121,8 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
   const isEmpty = !value || value === '<br>' || value === '<p><br></p>'
 
   return (
-    <div className={cn('flex flex-col h-full', className)}>
-      <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-muted/20 shrink-0">
+    <div className={cn('flex flex-col h-full min-h-0 bg-card', className)}>
+      <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-muted/30 shrink-0">
         <Button
           variant="ghost"
           size="icon"
@@ -267,15 +267,35 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
         </Button>
       </div>
 
-      <div className="flex-1 relative bg-background">
+      <div className="flex-1 relative min-h-0 bg-card">
         {isEmpty && !isFocused && placeholder && (
-          <div className="absolute top-6 left-6 md:top-8 md:left-8 text-muted-foreground pointer-events-none text-base md:text-lg">
+          <div className="absolute top-6 left-6 md:top-8 md:left-8 text-muted-foreground/60 pointer-events-none text-base md:text-lg italic">
             {placeholder}
           </div>
         )}
         <div
           ref={editorRef}
-          className="h-full p-6 md:p-8 outline-none overflow-y-auto prose dark:prose-invert max-w-none focus:outline-none text-base md:text-lg leading-relaxed font-serif [&_*]:!bg-transparent [&_*]:!shadow-none"
+          className={cn(
+            // Layout & scroll
+            'absolute inset-0 overflow-y-auto outline-none focus:outline-none',
+            // Padding & typography
+            'p-6 md:p-10 text-base md:text-lg leading-[1.8] font-serif',
+            // Text colour: foreground, but slightly softened in dark mode for long-form reading
+            'text-foreground/90',
+            // Paragraph spacing inside the editor
+            '[&>p]:mb-5 [&>p:last-child]:mb-0',
+            // Headings inside the editor
+            '[&>h1]:text-3xl [&>h1]:font-bold [&>h1]:mb-4 [&>h1]:mt-2',
+            '[&>h2]:text-2xl [&>h2]:font-bold [&>h2]:mb-3 [&>h2]:mt-6',
+            '[&>h3]:text-xl [&>h3]:font-semibold [&>h3]:mb-2 [&>h3]:mt-4',
+            // Lists
+            '[&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-5',
+            '[&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-5',
+            // Bulletproof reset: kill any inline styles pasted from external editors
+            '[&_*]:!bg-transparent [&_*]:!shadow-none [&_*]:!border-0',
+            // Force readable text colour on any pasted span/font tags
+            '[&_*]:!text-inherit',
+          )}
           contentEditable
           onInput={handleInput}
           onPaste={handlePaste}

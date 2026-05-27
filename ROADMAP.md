@@ -71,9 +71,9 @@
 
 > Gateway a definir futuramente. Criar a estrutura para plug-in fácil.
 
-- [ ] **[F2-4]** Criar endpoint seguro no PocketBase para processar compra de Coins (nunca direto do frontend)
-- [ ] **[F2-5]** Substituir `buyCoins` atual (que adiciona sem pagamento) por chamada ao endpoint
-- [ ] **[F2-6]** Definir pacotes de Coins: 60 / 300 / 680 / 1280 / 3280 / 6480
+- [x] **[F2-4]** Criar endpoint seguro no PocketBase para processar compra de Coins (nunca direto do frontend)
+- [x] **[F2-5]** Substituir `buyCoins` atual (que adiciona sem pagamento) por chamada ao endpoint
+- [x] **[F2-6]** Definir pacotes de Coins: 60 / 300 / 680 / 1280 / 3280 / 6480
 - [ ] **[F2-7]** Integrar Mercado Pago (PIX + cartão BR) ou Stripe
 
 ### 2.3 Sistema de Assinatura — Privilege Pass

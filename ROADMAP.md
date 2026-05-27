@@ -183,6 +183,14 @@
 
 ---
 
+## 🐞 Bugs Conhecidos / Backlog (resolver depois)
+
+> Bugs identificados mas adiados — não bloqueiam progresso da fase atual.
+
+- [ ] **[BUG-1]** Quando um capítulo Premium previamente comprado é alterado para Privilege via Studio/admin, o Reader continua liberando acesso ao leitor que tinha o registro antigo de `unlocked_chapters`. Cenário extremamente raro na prática (nenhum autor vai degradar um capítulo já vendido). Causa provável: (a) o Studio não está salvando `type='privilege'` no banco para autor `starter` (a opção fica bloqueada na UI), ou (b) cache de build do Skip. Resolver junto do painel admin (Fase 8) quando a promoção de tier e mudança de tipo passar por um fluxo controlado.
+
+---
+
 ## 📅 Ordem de Execução Sugerida
 
 ```
